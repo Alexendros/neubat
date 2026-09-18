@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "hostname": "neubat-dev",
+  "username": "developer",
+  "password": "neubat",
+  "disk": "/dev/sda",
+  "desktop": "gnome",
+  "packages": [
+    "docker",
+    "docker-compose",
+    "nodejs",
+    "npm",
+    "yarn",
+    "python",
+    "python-pip",
+    "python-poetry",
+    "go",
+    "rust",
+    "code",
+    "github-cli",
+    "kubectl",
+    "helm",
+    "minikube",
+    "terraform",
+    "ansible",
+    "git"
+  ],
+  "services": [
+    "NetworkManager",
+    "sshd",
+    "docker"
+  ],
+  "timezone": "Europe/Madrid",
+  "locale": "es_ES.UTF-8",
+  "keyboard": "es"
+}

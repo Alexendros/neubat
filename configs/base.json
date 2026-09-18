@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "hostname": "neubat-base",
+  "username": "neubat",
+  "password": "neubat",
+  "disk": "/dev/sda",
+  "desktop": "none",
+  "packages": [
+    "htop",
+    "btop",
+    "fastfetch",
+    "git",
+    "curl",
+    "wget"
+  ],
+  "services": [
+    "NetworkManager",
+    "sshd"
+  ],
+  "timezone": "Europe/Madrid",
+  "locale": "es_ES.UTF-8",
+  "keyboard": "es"
+}

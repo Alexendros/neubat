@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEUBAT — Instalación desatendida de Arch Linux</title>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #1a2230; --accent: #4fc3f7; --accent2: #7c4dff;
+    --text: #e6edf3; --muted: #8b98a9; --ok: #3fb950; --err: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 1rem;
+  }
+  header { text-align: center; margin: 2rem 0 1.5rem; }
+  header h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: .15em; }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--muted); max-width: 40rem; margin-top: .5rem; }
+  main { width: 100%; max-width: 42rem; display: grid; gap: 1.5rem; }
+  .card {
+    background: var(--panel); border: 1px solid #2a3546; border-radius: .75rem;
+    padding: 1.25rem;
+  }
+  .card h2 { font-size: 1.05rem; margin-bottom: 1rem; color: var(--accent); }
+  label { display: block; font-size: .85rem; color: var(--muted); margin: .75rem 0 .25rem; }
+  input, select, textarea {
+    width: 100%; padding: .6rem .75rem; border-radius: .5rem;
+    border: 1px solid #344256; background: #111927; color: var(--text);
+    font-size: 1rem;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  @media (max-width: 520px) { .row { grid-template-columns: 1fr; } }
+  button {
+    margin-top: 1.25rem; width: 100%; padding: .8rem; font-size: 1rem; font-weight: 600;
+    color: #04121f; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border: none; border-radius: .5rem; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: wait; }
+  .resultado { display: none; }
+  .resultado.visible { display: block; }
+  .campo-copia {
+    display: flex; gap: .5rem; align-items: center; margin-top: .5rem;
+    background: #111927; border: 1px solid #344256; border-radius: .5rem; padding: .5rem .75rem;
+    word-break: break-all; font-family: ui-monospace, monospace; font-size: .85rem;
+  }
+  .campo-copia button {
+    width: auto; margin: 0; padding: .35rem .7rem; font-size: .8rem; flex-shrink: 0;
+  }
+  .msg-ok { color: var(--ok); }
+  .msg-err { color: var(--err); }
+  table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid #2a3546; }
+  th { color: var(--muted); font-weight: 500; }
+  .estado { font-family: ui-monospace, monospace; }
+  .estado.pending { color: var(--accent); }
+  .estado.downloaded { color: var(--accent2); }
+  .estado.completed { color: var(--ok); }
+  .estado.failed { color: var(--err); }
+  footer { color: var(--muted); font-size: .8rem; margin: 2rem 0 1rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>NEU<span>BAT</span></h1>
+  <p>Instalación desatendida de Arch Linux por red. Configura tu sistema, obtén tu URL única y arranca por iPXE. Sin USB, sin intervención.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Nueva instalación</h2>
+    <form id="form-install">
+      <label for="profile">Perfil</label>
+      <select id="profile" name="profile">
+        <option value="production" selected>Producción (KDE + servicios)</option>
+        <option value="developer">Desarrollo (GNOME + toolchains)</option>
+        <option value="base">Base (mínimo, sin GUI)</option>
+      </select>
+
+      <div class="row">
+        <div>
+          <label for="hostname">Hostname (opcional)</label>
+          <input id="hostname" name="hostname" placeholder="mi-equipo" pattern="[a-z0-9-]+">
+        </div>
+        <div>
+          <label for="username">Usuario (opcional)</label>
+          <input id="username" name="username" placeholder="neubat" pattern="[a-z_][a-z0-9_-]*">
+        </div>
+      </div>
+
+      <label for="packages">Paquetes adicionales (opcional, separados por espacio)</label>
+      <textarea id="packages" name="packages" rows="2" placeholder="htop btop firefox"></textarea>
+
+      <button type="submit" id="btn-crear">Generar instalación</button>
+    </form>
+  </section>
+
+  <section class="card resultado" id="resultado">
+    <h2>Instalación creada</h2>
+    <p id="msg"></p>
+    <label>Token</label>
+    <div class="campo-copia"><code id="r-token"></code><button type="button" data-copia="r-token">Copiar</button></div>
+    <label>URL de arranque iPXE</label>
+    <div class="campo-copia"><code id="r-boot"></code><button type="button" data-copia="r-boot">Copiar</button></div>
+    <label>URL de configuración</label>
+    <div class="campo-copia"><code id="r-config"></code><button type="button" data-copia="r-config">Copiar</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Instalaciones recientes</h2>
+    <table>
+      <thead><tr><th>Token</th><th>Perfil</th><th>Estado</th><th>Creada</th></tr></thead>
+      <tbody id="tabla-installs"><tr><td colspan="4">Cargando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+
+<footer>NEUBAT v1.0.0 · GPL-3.0</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+async function cargarInstalaciones() {
+  const tbody = $('tabla-installs');
+  try {
+    const res = await fetch('/api/installations');
+    const lista = await res.json();
+    if (!lista.length) {
+      tbody.innerHTML = '<tr><td colspan="4">Sin instalaciones registradas.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(i => `<tr>
+      <td><code>${i.token.slice(0, 8)}…</code></td>
+      <td>${i.profile}</td>
+      <td class="estado ${i.status}">${i.status}</td>
+      <td>${new Date(i.created_at).toLocaleString('es-ES')}</td>
+    </tr>`).join('');
+  } catch {
+    tbody.innerHTML = '<tr><td colspan="4" class="msg-err">Error cargando instalaciones.</td></tr>';
+  }
+}
+
+$('form-install').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('btn-crear');
+  btn.disabled = true;
+  try {
+    const body = {
+      profile: $('profile').value,
+      hostname: $('hostname').value || undefined,
+      username: $('username').value || undefined,
+      packages: $('packages').value.trim().split(/\s+/).filter(Boolean)
+    };
+    const res = await fetch('/api/install', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error del servidor');
+
+    const base = location.origin;
+    $('r-token').textContent = data.token;
+    $('r-boot').textContent = base + data.boot_url;
+    $('r-config').textContent = base + data.config_url;
+    $('msg').textContent = data.message;
+    $('msg').className = 'msg-ok';
+    $('resultado').classList.add('visible');
+    cargarInstalaciones();
+  } catch (err) {
+    $('msg').textContent = err.message;
+    $('msg').className = 'msg-err';
+    $('resultado').classList.add('visible');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.querySelectorAll('[data-copia]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText($(btn.dataset.copia).textContent);
+    btn.textContent = 'Copiado';
+    setTimeout(() => btn.textContent = 'Copiar', 1500);
+  });
+});
+
+cargarInstalaciones();
+</script>
+</body>
+</html>

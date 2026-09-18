@@ -1,0 +1,50 @@
+{
+  "version": "1.0.0",
+  "hostname": "neubat-prod",
+  "username": "neubat",
+  "password": "neubat",
+  "disk": "/dev/nvme0n1",
+  "desktop": "kde",
+  "packages": [
+    "docker",
+    "docker-compose",
+    "nodejs",
+    "npm",
+    "python",
+    "python-pip",
+    "nginx",
+    "postgresql",
+    "redis",
+    "htop",
+    "btop",
+    "fastfetch",
+    "git",
+    "curl",
+    "wget",
+    "firefox",
+    "libreoffice-fresh",
+    "vlc",
+    "gimp"
+  ],
+  "services": [
+    "NetworkManager",
+    "sshd",
+    "docker",
+    "nginx",
+    "postgresql",
+    "redis"
+  ],
+  "timezone": "Europe/Madrid",
+  "locale": "es_ES.UTF-8",
+  "keyboard": "es",
+  "features": {
+    "ssh": true,
+    "firewall": true,
+    "automatic_updates": true,
+    "backup": {
+      "enabled": true,
+      "schedule": "daily",
+      "target": "/home/neubat/backups"
+    }
+  }
+}

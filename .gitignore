@@ -1,0 +1,14 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Datos en runtime del portal
+portal/data/
+portal/configs/generated/
+
+# Logs
+*.log
+
+# Temporales
+*.tmp
+.DS_Store

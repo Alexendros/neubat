@@ -1,0 +1,50 @@
+#!ipxe
+
+# =============================================================================
+# NEUBAT Netboot - Arranque por red sin USB
+# Menú interactivo. Para instalación 100% desatendida, usa la URL personalizada
+# generada por el portal: http://<portal>/boot/<token>
+# =============================================================================
+
+dhcp || shell
+
+:menu
+menu NEUBAT - Instalacion por Red
+item --gap -- ---------------- Opciones ----------------
+item production   Instalacion Produccion (KDE + Apps)
+item developer    Instalacion Desarrollador (GNOME + DevTools)
+item minimal      Instalacion Minima (Sin GUI)
+item --gap -- ---------------- Avanzado ----------------
+item shell        Abrir shell de rescate
+item reboot       Reiniciar sistema
+choose --default production --timeout 10000 target && goto ${target}
+
+:production
+set neubat_profile production
+goto boot
+
+:developer
+set neubat_profile developer
+goto boot
+
+:minimal
+set neubat_profile minimal
+goto boot
+
+:boot
+# Kernel y initramfs oficiales de Arch (mirror geolocalizado)
+set base-url https://geo.mirror.pkgbuild.com/iso/latest
+kernel ${base-url}/arch/boot/x86_64/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=${base-url}/arch/ ip=dhcp neubat_profile=${neubat_profile}
+initrd ${base-url}/arch/boot/x86_64/initramfs-linux.img
+boot || goto failed
+
+:failed
+echo Error en el arranque por red. Volviendo al menu...
+sleep 5
+goto menu
+
+:shell
+shell
+
+:reboot
+reboot
