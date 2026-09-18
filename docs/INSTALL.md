@@ -159,6 +159,35 @@ Comprueba: `/etc/neubat-release`, hostname, usuario no-root, Internet, NetworkMa
 | Portal local no responde | `npm install` falló en destino | `cd /opt/neubat-portal && npm install --omit=dev && systemctl restart neubat-portal` |
 | Log completo | — | `/var/log/neubat-install.log` (en el entorno live) |
 
+## 11. Pruebas en VM (QEMU/KVM)
+
+Lecciones aprendidas al validar NEUBAT en QEMU con disco NVMe virtual:
+
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| `IP-Config: no response` en initramfs | `ip=dhcp` activa el hook `net`, que busca `eth0` (nombres predecibles) | No pasar `ip=dhcp` si el rootfs no viene de red; el live ISO configura DHCP solo |
+| `/dev/disk/by-label/ARCH_*` no aparece | cdrom IDE sin módulo en initramfs (máquina `pc`) | Usar `-machine q35` (cdrom SATA/AHCI) |
+| Descarga de pacman congelada | virtio-net + red slirp se cuelga en transferencias grandes | Usar NIC `-device e1000,netdev=...` |
+| reflector agota timeouts | su rating usa 5 s por defecto | `--download-timeout 30` en redes lentas |
+| Consola serie sin prompt | el prompt zsh del ISO lleva códigos ANSI | En automatización (pexpect), usar patrones tolerantes a escapes |
+| SSH tras instalar | `PermitRootLogin prohibit-password` por defecto | Entrar con el usuario del perfil, no root |
+
+Ejemplo de lanzamiento con kernel directo (consola serie completa):
+
+```bash
+qemu-system-x86_64 -machine q35 -enable-kvm -cpu host -m 4096 -smp 4 \
+  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd \
+  -drive if=pflash,format=raw,file=vars.fd \
+  -drive file=disk.qcow2,if=none,id=nvm0,format=qcow2 -device nvme,drive=nvm0 \
+  -cdrom archlinux-x86_64.iso \
+  -kernel vmlinuz-linux -initrd initramfs-linux.img \
+  -append "archisobasedir=arch archisolabel=ARCH_YYYYMM console=ttyS0" \
+  -netdev user,id=n0,hostfwd=tcp::2222-:22 -device e1000,netdev=n0 \
+  -nographic
+```
+
+Para iterar rápido, usar la caché de paquetes de `deploy/pacman-cache/`.
+
 ---
 
 **Hash de verificación del documento:** `neubat-doc-v1.0-20260919`

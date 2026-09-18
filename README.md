@@ -51,6 +51,8 @@ neubat/
 │   ├── base.json              # Perfil mínimo (sin GUI)
 │   ├── production.json        # Perfil producción (KDE + servicios)
 │   └── developer.json         # Perfil desarrollo (GNOME + toolchains)
+├── deploy/
+│   └── pacman-cache/          # Proxy caché nginx de paquetes pacman (opcional)
 └── docs/
     ├── INSTALL.md             # Documento maestro de instalación y despliegue
     ├── ARCHITECTURE.md        # Arquitectura técnica y diagrama de flujo
