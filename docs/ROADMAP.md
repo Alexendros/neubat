@@ -2,9 +2,9 @@
 
 | Prioridad | Tarea | Responsable | Estimación | Estado |
 |-----------|-------|-------------|------------|--------|
-| P0 | Desplegar servidor portal en entorno de pruebas | DevOps | 2h | Pendiente |
+| P0 | Desplegar servidor portal en entorno de pruebas | DevOps | 2h | ✅ Hecho (19-sep-2026) |
 | P0 | Validar script iPXE en VM (VirtualBox/QEMU) | QA | 1h | Pendiente |
-| P0 | Probar instalación completa en VM con disco NVMe virtual | QA | 2h | Pendiente |
+| P0 | Probar instalación completa en VM con disco NVMe virtual | QA | 2h | ✅ Hecho (19-sep-2026, perfil base en QEMU/NVMe: particionado, chroot, portal local y URL única verificados por SSH) |
 | P1 | Crear imagen Docker del portal para distribución | Dev | 3h | Pendiente |
 | P1 | Generación de ISO híbrida con hook de autoinstalación | Dev | 4h | Pendiente |
 | P1 | Endurecer sudoers post-instalación (retirar NOPASSWD) | Dev | 1h | Pendiente |
