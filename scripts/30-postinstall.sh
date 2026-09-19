@@ -70,6 +70,12 @@ su - ${USERNAME} -c '
     cd yay
     makepkg -si --noconfirm
 ' || echo "[WARNING] La construcción de yay falló; instálalo manualmente tras el primer arranque"
+
+# Endurecer sudo: el NOPASSWD solo era necesario para la construcción
+# desatendida de paquetes AUR; a partir de aquí wheel pide contraseña
+echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/neubat
+chmod 440 /etc/sudoers.d/neubat
+rm -rf /tmp/yay
 EOF
 
     success "Sistema configurado"

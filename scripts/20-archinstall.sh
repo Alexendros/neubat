@@ -72,6 +72,7 @@ install_base_system() {
         networkmanager network-manager-applet \
         sudo git base-devel \
         curl wget \
+        inetutils \
         reflector \
         neovim nano \
         terminus-font \

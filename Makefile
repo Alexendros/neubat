@@ -1,5 +1,5 @@
 # NEUBAT - Makefile
-.PHONY: portal install-deps validate lint test
+.PHONY: portal install-deps validate lint test test-vm
 
 install-deps:
 	cd portal && npm install
@@ -25,3 +25,7 @@ test: validate
 	curl -sf -X POST http://localhost:3100/api/install -H 'Content-Type: application/json' \
 		-d '{"profile":"base","hostname":"neubat-test"}' && echo "OK /api/install"; \
 	wait || true
+
+# Prueba end-to-end en VM QEMU/NVMe (larga: ~40 min). Ver tests/vm/README.md
+test-vm:
+	python3 tests/vm/neubat_vm_test.py

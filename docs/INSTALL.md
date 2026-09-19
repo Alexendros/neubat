@@ -58,6 +58,8 @@ Como servicio systemd, usar como plantilla la unidad que genera `scripts/40-port
 
 El portal aplica rate-limiting (100 req / 15 min por IP) en `/api/*`. Para exposición pública, desplegar detrás de un reverse proxy con TLS.
 
+Variable de entorno opcional: `NEUBAT_MIRROR_BASE` — mirror base para el netboot iPXE (defecto: `https://geo.mirror.pkgbuild.com/iso/latest`). Apúntala a una caché local (`deploy/pacman-cache/`) cuando el firmware iPXE no tenga HTTPS compilado o para acelerar los arranques por red.
+
 ## 4. Flujo de instalación
 
 ### 4.1 Crear la instalación
@@ -144,7 +146,7 @@ Comprueba: `/etc/neubat-release`, hostname, usuario no-root, Internet, NetworkMa
 
 ## 9. Notas de seguridad
 
-- La instalación habilita `%wheel` con `NOPASSWD` para permitir la construcción desatendida de paquetes AUR (yay). **Endurecer tras la instalación:** editar `/etc/sudoers.d/neubat` a `%wheel ALL=(ALL:ALL) ALL`.
+- La construcción desatendida de paquetes AUR (yay) requiere `NOPASSWD` temporal en `%wheel`; **el instalador lo retira automáticamente** al terminar (`/etc/sudoers.d/neubat` queda `%wheel ALL=(ALL:ALL) ALL`).
 - Cambiar las contraseñas iniciales de usuario y root en el primer acceso.
 - Los tokens son hex aleatorios de 128 bits; el portal valida su formato antes de tocar el sistema de archivos.
 - `boot_url` y `config_url` no llevan autenticación: quien posea el token puede descargar la configuración. Tratar los tokens como secretos y, en producción, servir bajo TLS.
@@ -165,7 +167,8 @@ Lecciones aprendidas al validar NEUBAT en QEMU con disco NVMe virtual:
 
 | Problema | Causa | Solución |
 |----------|-------|----------|
-| `IP-Config: no response` en initramfs | `ip=dhcp` activa el hook `net`, que busca `eth0` (nombres predecibles) | No pasar `ip=dhcp` si el rootfs no viene de red; el live ISO configura DHCP solo |
+| `IP-Config: no response` en initramfs | `ip=dhcp` usa `ipconfig` (klibc), que busca `eth0`; con nombres predecibles no existe. Incluso con `eth0`, `ipconfig` puede no obtener respuesta del servidor DHCP interno de QEMU slirp | Añadir `net.ifnames=0` a la cmdline. En red con DHCP real (slirp) / router doméstico) el netboot por iPXE funciona; en slirp pura la fase de `archiso_http_srv` puede quedarse sin red. Usar kernel directo para pruebas locales o una red con DHCP real |
+| iPXE con build estándar sin HTTPS | `ipxe.lkrn` de boot.ipxe.org no incluye HTTPS en su build por defecto | Usar `NEUBAT_MIRROR_BASE` apuntando a la caché HTTP local (`deploy/pacman-cache/`) o un build de iPXE con HTTPS |
 | `/dev/disk/by-label/ARCH_*` no aparece | cdrom IDE sin módulo en initramfs (máquina `pc`) | Usar `-machine q35` (cdrom SATA/AHCI) |
 | Descarga de pacman congelada | virtio-net + red slirp se cuelga en transferencias grandes | Usar NIC `-device e1000,netdev=...` |
 | reflector agota timeouts | su rating usa 5 s por defecto | `--download-timeout 30` en redes lentas |
