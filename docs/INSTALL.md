@@ -144,7 +144,7 @@ Comprueba: `/etc/neubat-release`, hostname, usuario no-root, Internet, NetworkMa
 
 ## 9. Notas de seguridad
 
-- La instalación habilita `%wheel` con `NOPASSWD` para permitir la construcción desatendida de paquetes AUR (yay). **Endurecer tras la instalación:** editar `/etc/sudoers.d/neubat` a `%wheel ALL=(ALL:ALL) ALL`.
+- La construcción desatendida de paquetes AUR (yay) requiere `NOPASSWD` temporal en `%wheel`; **el instalador lo retira automáticamente** al terminar (`/etc/sudoers.d/neubat` queda `%wheel ALL=(ALL:ALL) ALL`).
 - Cambiar las contraseñas iniciales de usuario y root en el primer acceso.
 - Los tokens son hex aleatorios de 128 bits; el portal valida su formato antes de tocar el sistema de archivos.
 - `boot_url` y `config_url` no llevan autenticación: quien posea el token puede descargar la configuración. Tratar los tokens como secretos y, en producción, servir bajo TLS.

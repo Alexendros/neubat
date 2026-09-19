@@ -7,7 +7,7 @@
 | P0 | Probar instalación completa en VM con disco NVMe virtual | QA | 2h | ✅ Hecho (19-sep-2026, perfil base en QEMU/NVMe: particionado, chroot, portal local y URL única verificados por SSH) |
 | P1 | Crear imagen Docker del portal para distribución | Dev | 3h | Pendiente |
 | P1 | Generación de ISO híbrida con hook de autoinstalación | Dev | 4h | Pendiente |
-| P1 | Endurecer sudoers post-instalación (retirar NOPASSWD) | Dev | 1h | Pendiente |
+| P1 | Endurecer sudoers post-instalación (retirar NOPASSWD) | Dev | 1h | ✅ Hecho (19-sep-2026, automático al final de `30-postinstall.sh`) |
 | P2 | Panel de administración web para seguimiento | Frontend | 8h | Pendiente |
 | P2 | Integración con Ansible para configuración post-instalación | DevOps | 6h | Pendiente |
 | P2 | Soporte de cifrado LUKS en particionado | Dev | 4h | Pendiente |

@@ -53,6 +53,8 @@ neubat/
 │   └── developer.json         # Perfil desarrollo (GNOME + toolchains)
 ├── deploy/
 │   └── pacman-cache/          # Proxy caché nginx de paquetes pacman (opcional)
+├── tests/
+│   └── vm/                    # Prueba end-to-end QEMU/NVMe (neubat_vm_test.py)
 └── docs/
     ├── INSTALL.md             # Documento maestro de instalación y despliegue
     ├── ARCHITECTURE.md        # Arquitectura técnica y diagrama de flujo
