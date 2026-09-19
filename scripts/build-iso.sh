@@ -26,8 +26,15 @@ docker run --rm --privileged \
     archlinux:latest bash -c '
 set -euo pipefail
 
-echo "[build-iso] Actualizando e instalando archiso ..."
-pacman -Sy --noconfirm --needed archiso
+echo "[build-iso] Actualizando e instalando archiso + reflector ..."
+pacman -Sy --noconfirm --needed archiso reflector
+
+# Usar mirrors europeos rápidos y desactivar el timeout por velocidad lenta.
+echo "[build-iso] Optimizando mirrorlist ..."
+reflector --country Germany,France,Netherlands,Spain \
+          --age 24 --protocol https --sort rate --save /etc/pacman.d/mirrorlist || true
+grep -q "^DisableDownloadTimeout" /etc/pacman.conf || sed -i '/^\[options\]/a DisableDownloadTimeout' /etc/pacman.conf
+export PACMAN_TIMEOUT=120
 
 WORK_DIR="$(mktemp -d -t neubat-work-XXXXXX)"
 PROFILE_DIR="$(mktemp -d -t neubat-profile-XXXXXX)"
@@ -35,6 +42,9 @@ trap "rm -rf ${WORK_DIR} ${PROFILE_DIR}" EXIT
 
 echo "[build-iso] Copiando perfil releng ..."
 cp -a /usr/share/archiso/configs/releng/. "${PROFILE_DIR}/"
+# Evitar abortos por red lenta durante la construcción.
+grep -q "^DisableDownloadTimeout" "${PROFILE_DIR}/pacman.conf" || sed -i '/^\[options\]/a DisableDownloadTimeout' "${PROFILE_DIR}/pacman.conf"
+grep -q "^ParallelDownloads" "${PROFILE_DIR}/pacman.conf" || sed -i '/^\[options\]/a ParallelDownloads = 5' "${PROFILE_DIR}/pacman.conf"
 
 echo "[build-iso] Inyectando NEUBAT en airootfs ..."
 mkdir -p "${PROFILE_DIR}/airootfs/opt/neubat"

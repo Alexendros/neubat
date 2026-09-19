@@ -10,6 +10,7 @@ const path = require('path');
 const db = require('./lib/db');
 const install = require('./routes/install');
 const statusRoutes = require('./routes/status');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,9 +40,15 @@ function apiLimiter(req, res, next) {
 app.use('/api', apiLimiter);
 app.use('/api', install.router);
 app.use('/api', statusRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/boot', install.bootRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Panel de administración en /admin
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
 
 // 404 JSON para rutas API no definidas
 app.use('/api', (req, res) => {

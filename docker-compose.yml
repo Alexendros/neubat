@@ -12,6 +12,7 @@ services:
       - PORT=3000
       - NEUBAT_DATA_DIR=/app/data
       - NEUBAT_CONFIGS_DIR=/app/portal/configs/generated
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
     volumes:
       - portal-data:/app/data
       - portal-configs:/app/portal/configs/generated

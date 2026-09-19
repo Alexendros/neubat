@@ -16,10 +16,31 @@
     min-height: 100vh; display: flex; flex-direction: column; align-items: center;
     padding: 1rem;
   }
-  header { text-align: center; margin: 2rem 0 1.5rem; }
-  header h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: .15em; }
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  body {
+    background:
+      radial-gradient(circle at 15% 25%, rgba(79,195,247,.12) 0, transparent 35%),
+      radial-gradient(circle at 85% 75%, rgba(124,77,255,.12) 0, transparent 35%),
+      var(--bg);
+  }
+  header { text-align: center; margin: 2.5rem 0 2rem; }
+  .brand {
+    display: inline-flex; align-items: center; justify-content: center; gap: .75rem;
+    margin-bottom: 1rem;
+  }
+  .logo {
+    width: 3.5rem; height: 3.5rem; border-radius: .75rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: grid; place-items: center; font-weight: 900; color: #04121f; font-size: 1.4rem;
+    box-shadow: 0 0 24px rgba(79,195,247,.25);
+  }
+  header h1 { font-size: clamp(2rem, 6vw, 3.2rem); letter-spacing: .12em; font-weight: 800; }
   header h1 span { color: var(--accent); }
-  header p { color: var(--muted); max-width: 40rem; margin-top: .5rem; }
+  header p { color: var(--muted); max-width: 42rem; margin: .75rem auto 0; font-size: 1.05rem; }
   main { width: 100%; max-width: 42rem; display: grid; gap: 1.5rem; }
   .card {
     background: var(--panel); border: 1px solid #2a3546; border-radius: .75rem;
@@ -66,7 +87,10 @@
 </head>
 <body>
 <header>
-  <h1>NEU<span>BAT</span></h1>
+  <div class="brand">
+    <div class="logo">N</div>
+    <h1>NEU<span>BAT</span></h1>
+  </div>
   <p>Instalación desatendida de Arch Linux por red. Configura tu sistema, obtén tu URL única y arranca por iPXE. Sin USB, sin intervención.</p>
 </header>
 
