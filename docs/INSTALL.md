@@ -167,7 +167,7 @@ Lecciones aprendidas al validar NEUBAT en QEMU con disco NVMe virtual:
 
 | Problema | Causa | Solución |
 |----------|-------|----------|
-| `IP-Config: no response` en initramfs | `ip=dhcp` activa el hook `net`, que busca `eth0` (nombres predecibles) | No pasar `ip=dhcp` si el rootfs no viene de red; el live ISO configura DHCP solo |
+| `IP-Config: no response` en initramfs | `ip=dhcp` usa `ipconfig` (klibc), que busca `eth0`; con nombres predecibles no existe | Añadir `net.ifnames=0` a la cmdline (ya incluido en los scripts iPXE). Si el rootfs no viene de red, no pasar `ip=dhcp` |
 | `/dev/disk/by-label/ARCH_*` no aparece | cdrom IDE sin módulo en initramfs (máquina `pc`) | Usar `-machine q35` (cdrom SATA/AHCI) |
 | Descarga de pacman congelada | virtio-net + red slirp se cuelga en transferencias grandes | Usar NIC `-device e1000,netdev=...` |
 | reflector agota timeouts | su rating usa 5 s por defecto | `--download-timeout 30` en redes lentas |
