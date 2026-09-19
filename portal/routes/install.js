@@ -11,6 +11,10 @@ const db = require('../lib/db');
 const router = express.Router();
 const bootRouter = express.Router();
 
+// Mirror base para el netboot iPXE (configurable para mirrors/cachés locales;
+// útil cuando el firmware iPXE no tiene HTTPS compilado)
+const BOOT_BASE_URL = process.env.NEUBAT_MIRROR_BASE || 'https://geo.mirror.pkgbuild.com/iso/latest';
+
 // POST /api/install — crear nueva instalación
 router.post('/install', async (req, res) => {
     try {
@@ -121,7 +125,7 @@ bootRouter.get('/:token', async (req, res) => {
 
     const script = `#!ipxe
 dhcp
-set base-url https://geo.mirror.pkgbuild.com/iso/latest
+set base-url ${BOOT_BASE_URL}
 kernel \${base-url}/arch/boot/x86_64/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=\${base-url}/arch/ ip=dhcp console=ttyS0 neubat_token=${req.params.token}
 initrd \${base-url}/arch/boot/x86_64/initramfs-linux.img
 boot

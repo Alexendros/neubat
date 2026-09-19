@@ -58,6 +58,8 @@ Como servicio systemd, usar como plantilla la unidad que genera `scripts/40-port
 
 El portal aplica rate-limiting (100 req / 15 min por IP) en `/api/*`. Para exposición pública, desplegar detrás de un reverse proxy con TLS.
 
+Variable de entorno opcional: `NEUBAT_MIRROR_BASE` — mirror base para el netboot iPXE (defecto: `https://geo.mirror.pkgbuild.com/iso/latest`). Apúntala a una caché local (`deploy/pacman-cache/`) cuando el firmware iPXE no tenga HTTPS compilado o para acelerar los arranques por red.
+
 ## 4. Flujo de instalación
 
 ### 4.1 Crear la instalación
