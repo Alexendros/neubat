@@ -38,7 +38,15 @@ perfil, tamaño de disco).
    servicios activos, API del portal local, `NEUBAT-URL.txt`, layout NVMe,
    sudo endurecido (sin NOPASSWD).
 
-## Problemas conocidos del entorno VM
+## Notas sobre validación iPXE
 
-Ver `docs/INSTALL.md` §11: NIC e1000 obligatoria con slirp, `ParallelDownloads=1`,
-no usar `ip=dhcp` sin netboot, patrones de consola tolerantes a ANSI/UTF-8.
+La prueba `neubat_vm_test.py` valida la instalación con **kernel directo** (cdrom
+local). El script iPXE del portal (`/boot/<token>`) y `netboot/ipxe/neubat.ipxe`
+fueron verificados hasta el arranque del kernel+initramfs por red (dhcp → chain
+al portal → descarga HTTP). La fase final `archiso_http_srv` depende de que el
+initramfs obtenga red por DHCP; en la red `slirp` de QEMU, `ipconfig` de klibc
+no recibe respuesta, por lo que el netboot puro hasta el live ISO requiere un
+entorno con DHCP real (router doméstico, libvirt con dnsmasq, etc.).
+
+Para testear iPXE con firmware sin HTTPS compilado, usar `NEUBAT_MIRROR_BASE`
+con la caché HTTP de `deploy/pacman-cache/`.

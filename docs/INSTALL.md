@@ -167,7 +167,8 @@ Lecciones aprendidas al validar NEUBAT en QEMU con disco NVMe virtual:
 
 | Problema | Causa | Solución |
 |----------|-------|----------|
-| `IP-Config: no response` en initramfs | `ip=dhcp` usa `ipconfig` (klibc), que busca `eth0`; con nombres predecibles no existe | Añadir `net.ifnames=0` a la cmdline (ya incluido en los scripts iPXE). Si el rootfs no viene de red, no pasar `ip=dhcp` |
+| `IP-Config: no response` en initramfs | `ip=dhcp` usa `ipconfig` (klibc), que busca `eth0`; con nombres predecibles no existe. Incluso con `eth0`, `ipconfig` puede no obtener respuesta del servidor DHCP interno de QEMU slirp | Añadir `net.ifnames=0` a la cmdline. En red con DHCP real (slirp) / router doméstico) el netboot por iPXE funciona; en slirp pura la fase de `archiso_http_srv` puede quedarse sin red. Usar kernel directo para pruebas locales o una red con DHCP real |
+| iPXE con build estándar sin HTTPS | `ipxe.lkrn` de boot.ipxe.org no incluye HTTPS en su build por defecto | Usar `NEUBAT_MIRROR_BASE` apuntando a la caché HTTP local (`deploy/pacman-cache/`) o un build de iPXE con HTTPS |
 | `/dev/disk/by-label/ARCH_*` no aparece | cdrom IDE sin módulo en initramfs (máquina `pc`) | Usar `-machine q35` (cdrom SATA/AHCI) |
 | Descarga de pacman congelada | virtio-net + red slirp se cuelga en transferencias grandes | Usar NIC `-device e1000,netdev=...` |
 | reflector agota timeouts | su rating usa 5 s por defecto | `--download-timeout 30` en redes lentas |
