@@ -12,3 +12,4 @@ portal/configs/generated/
 # Temporales
 *.tmp
 .DS_Store
+out/
