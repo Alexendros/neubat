@@ -126,7 +126,7 @@ bootRouter.get('/:token', async (req, res) => {
     const script = `#!ipxe
 dhcp
 set base-url ${BOOT_BASE_URL}
-kernel \${base-url}/arch/boot/x86_64/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=\${base-url}/arch/ ip=dhcp console=ttyS0 neubat_token=${req.params.token}
+kernel \${base-url}/arch/boot/x86_64/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=\${base-url}/arch/ ip=dhcp net.ifnames=0 console=ttyS0 neubat_token=${req.params.token}
 initrd \${base-url}/arch/boot/x86_64/initramfs-linux.img
 boot
 `;
