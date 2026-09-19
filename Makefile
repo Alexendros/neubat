@@ -12,6 +12,7 @@ validate:
 	@node --check portal/server.js && echo "OK portal/server.js"
 	@node --check portal/routes/install.js && echo "OK portal/routes/install.js"
 	@node --check portal/routes/status.js && echo "OK portal/routes/status.js"
+	@node --check portal/routes/admin.js && echo "OK portal/routes/admin.js"
 	@node --check portal/lib/db.js && echo "OK portal/lib/db.js"
 	@for f in configs/*.json; do python3 -m json.tool $$f > /dev/null && echo "OK $$f"; done
 

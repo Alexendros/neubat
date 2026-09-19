@@ -130,6 +130,16 @@ bash scripts/validate-install.sh
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — diagrama de flujo y componentes
 - [docs/ROADMAP.md](docs/ROADMAP.md) — próximos pasos
 
+## Panel de administración
+
+El portal incluye un panel en `/admin` protegido por `ADMIN_TOKEN`. Permite listar, filtrar, resetear, marcar como completadas y eliminar instalaciones.
+
+```bash
+ADMIN_TOKEN=tu-token-seguro docker compose up -d
+```
+
+Accede a `http://localhost:3000/admin` e introduce el token.
+
 ## Captura del portal
 
 ![Hero del portal NEUBAT](docs/assets/neubat-hero.png)
