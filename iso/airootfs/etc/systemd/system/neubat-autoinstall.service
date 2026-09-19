@@ -1,0 +1,14 @@
+[Unit]
+Description=NEUBAT autoinstall (live ISO)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/neubat-autoinstall
+StandardOutput=journal+console
+StandardError=journal+console
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

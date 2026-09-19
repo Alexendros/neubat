@@ -1,0 +1,31 @@
+#!/bin/bash
+# NEUBAT - Arranque desatendido desde el live ISO de Arch
+# Lee neubat_token, neubat_profile y neubat_portal_url del kernel cmdline
+# y ejecuta el instalador maestro.
+
+set -euo pipefail
+
+read_cmdline() {
+    local key
+    for key in neubat_token neubat_profile neubat_portal_url; do
+        grep -oE "${key}=[^ ]+" /proc/cmdline || true
+    done
+}
+
+eval "$(read_cmdline | sed 's/^/export /')"
+
+TOKEN="${neubat_token:-}"
+PROFILE="${neubat_profile:-production}"
+PORTAL_URL="${neubat_portal_url:-http://portal.neubat.local:3000}"
+
+if [[ -z "$TOKEN" ]]; then
+    echo "[neubat-autoinstall] No se detectó neubat_token en la línea de comandos. Arranque manual."
+    exit 0
+fi
+
+echo "[neubat-autoinstall] Token: ${TOKEN:0:8}…  Perfil: ${PROFILE}  Portal: ${PORTAL_URL}"
+
+export NEUBAT_PORTAL_URL="$PORTAL_URL"
+export NEUBAT_ASSUME_YES=true
+
+exec /opt/neubat/scripts/neubat-install.sh "$TOKEN" "$PROFILE"

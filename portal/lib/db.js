@@ -8,9 +8,11 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const PORTAL_ROOT = path.join(__dirname, '..');
-const CONFIG_DIR = path.join(PORTAL_ROOT, 'configs', 'generated');
-const PROFILES_DIR = path.join(PORTAL_ROOT, '..', 'configs');
-const DB_PATH = path.join(PORTAL_ROOT, 'data', 'installations.json');
+const CONFIG_DIR = process.env.NEUBAT_CONFIGS_DIR || path.join(PORTAL_ROOT, 'configs', 'generated');
+const PROFILES_DIR = process.env.NEUBAT_PROFILES_DIR || path.join(PORTAL_ROOT, '..', 'configs');
+const DB_PATH = process.env.NEUBAT_DATA_DIR
+    ? path.join(process.env.NEUBAT_DATA_DIR, 'installations.json')
+    : path.join(PORTAL_ROOT, 'data', 'installations.json');
 
 async function initStorage() {
     await fs.mkdir(CONFIG_DIR, { recursive: true });
