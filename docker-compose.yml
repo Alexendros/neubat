@@ -1,0 +1,42 @@
+services:
+  portal:
+    build:
+      context: .
+      dockerfile: portal/Dockerfile
+    container_name: neubat-portal
+    ports:
+      - "${NEUBAT_PORT:-3000}:3000"
+    environment:
+      - NEUBAT_MIRROR_BASE=${NEUBAT_MIRROR_BASE:-https://geo.mirror.pkgbuild.com/iso/latest}
+      - NODE_ENV=production
+      - PORT=3000
+      - NEUBAT_DATA_DIR=/app/data
+      - NEUBAT_CONFIGS_DIR=/app/portal/configs/generated
+    volumes:
+      - portal-data:/app/data
+      - portal-configs:/app/portal/configs/generated
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Proxy caché opcional de paquetes pacman (activar con: docker compose --profile cache up -d)
+  pacman-cache:
+    image: nginx:alpine
+    container_name: neubat-pacman-cache
+    profiles:
+      - cache
+    ports:
+      - "${NEUBAT_CACHE_PORT:-8090}:80"
+    volumes:
+      - ./deploy/pacman-cache/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - pacman-cache:/var/cache/pacman/pkg
+    restart: unless-stopped
+
+volumes:
+  portal-data:
+  portal-configs:
+  pacman-cache:

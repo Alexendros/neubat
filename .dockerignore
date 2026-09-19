@@ -1,0 +1,12 @@
+.git
+.gitignore
+.github
+*.md
+docs
+out
+portal/node_modules
+portal/data/installations.json
+portal/configs/generated
+tests/vm/*.qcow2
+tests/vm/*.img
+tests/vm/*.log

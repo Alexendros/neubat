@@ -1,5 +1,5 @@
 # NEUBAT - Makefile
-.PHONY: portal install-deps validate lint test test-vm
+.PHONY: portal install-deps validate lint test test-vm build-iso release
 
 install-deps:
 	cd portal && npm install
@@ -29,3 +29,14 @@ test: validate
 # Prueba end-to-end en VM QEMU/NVMe (larga: ~40 min). Ver tests/vm/README.md
 test-vm:
 	python3 tests/vm/neubat_vm_test.py
+
+# Construir ISO híbrida con autoinstalación (requiere Docker)
+build-iso:
+	bash scripts/build-iso.sh
+
+# Crear release v1.0.0 en GitHub adjuntando la ISO generada (requiere gh)
+release: build-iso
+	gh release create v1.0.0 out/neubat-1.0.0-x86_64.iso \
+		--title "NEUBAT v1.0.0" \
+		--notes-file docs/RELEASE-v1.0.0.md \
+		--repo Alexendros/neubat

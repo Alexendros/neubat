@@ -63,7 +63,14 @@ neubat/
 
 ## Quickstart
 
-### 1. Portal web
+### 1. Portal web (Docker)
+
+```bash
+docker compose up -d
+# http://localhost:3000
+```
+
+O en local con Node.js:
 
 ```bash
 cd portal
@@ -83,7 +90,24 @@ http://<servidor-portal>/boot/<token>
 
 o usa `netboot/ipxe/neubat.ipxe` para el menú interactivo.
 
-### 3. Instalación (desde el live ISO de Arch)
+### 3. ISO híbrida con autoinstalación
+
+Construye la ISO (requiere Docker):
+
+```bash
+make build-iso
+# out/neubat-1.0.0-x86_64.iso
+```
+
+Arranca una máquina con la ISO y pasa el token por kernel cmdline:
+
+```
+neubat_token=<token> neubat_profile=production neubat_portal_url=http://<portal>:3000
+```
+
+El instalador se ejecuta de forma desatendida y notifica al portal al finalizar.
+
+### 4. Instalación manual (desde el live ISO de Arch)
 
 ```bash
 export NEUBAT_PORTAL_URL="http://<servidor-portal>"
@@ -92,7 +116,7 @@ bash scripts/neubat-install.sh <token> [perfil]
 
 > **AVISO:** el instalador **destruye todos los datos** del disco objetivo. Usar solo en máquinas destinadas a ello.
 
-### 4. Validación
+### 5. Validación
 
 Tras el primer arranque:
 
@@ -105,6 +129,10 @@ bash scripts/validate-install.sh
 - [docs/INSTALL.md](docs/INSTALL.md) — documento maestro completo
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — diagrama de flujo y componentes
 - [docs/ROADMAP.md](docs/ROADMAP.md) — próximos pasos
+
+## Captura del portal
+
+![Hero del portal NEUBAT](docs/assets/neubat-hero.png)
 
 ## Seguridad
 
