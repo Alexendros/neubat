@@ -37,8 +37,11 @@ neubat/
 │   ├── routes/install.js      # API: creación y entrega de configs, boot iPXE
 │   ├── routes/admin.js        # API de administración
 │   ├── routes/status.js       # API: health y listado de instalaciones
-│   ├── public/index.html      # Frontend responsive (SPA ligera)
-│   └── public/admin.html      # Panel de administración
+│   ├── frontend/              # SPA React + Vite + shadcn/ui
+│   │   ├── src/pages/         # HomePage y AdminPage
+│   │   ├── src/components/ui/ # Componentes shadcn/ui
+│   │   └── package.json
+│   └── public/                # Build estático del frontend + wiki.html
 ├── netboot/
 │   ├── ipxe/neubat.ipxe       # Menú de arranque por red
 │   └── grub/loopback.cfg      # Fallback: arranque de ISO desde disco (GRUB loopback)
@@ -82,7 +85,8 @@ docker compose up -d
 O en local con Node.js:
 
 ```bash
-cd portal
+cd portal/frontend && npm install && npm run build
+cd ..
 npm install
 npm start          # http://localhost:3000
 ```

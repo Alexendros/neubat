@@ -9,6 +9,11 @@ portal/configs/generated/
 # Variables Ansible generadas en runtime
 ansible/generated/
 
+# Build del frontend React (se regenera con npm run build en portal/frontend)
+portal/public/assets/
+portal/public/index.html
+portal/public/favicon.svg
+
 # Logs
 *.log
 

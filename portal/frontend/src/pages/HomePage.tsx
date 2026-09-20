@@ -1,0 +1,226 @@
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import type { Installation, InstallRequest, InstallResponse } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { CheckCircle, Copy, Server, Terminal, Wifi } from 'lucide-react';
+
+const statusColors: Record<Installation['status'], string> = {
+  pending: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+  downloaded: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+  completed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  failed: 'bg-red-500/10 text-red-400 border-red-500/20',
+};
+
+export function HomePage() {
+  const [installations, setInstallations] = useState<Installation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<InstallResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadInstallations();
+  }, []);
+
+  async function loadInstallations() {
+    try {
+      const data = await api.installations();
+      setInstallations(data.slice().reverse());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setResult(null);
+
+    const form = new FormData(e.currentTarget);
+    const body: InstallRequest = {
+      profile: form.get('profile') as string,
+      hostname: (form.get('hostname') as string) || undefined,
+      username: (form.get('username') as string) || undefined,
+      packages: (form.get('packages') as string)
+        .split(/\s+/)
+        .filter(Boolean),
+    };
+
+    try {
+      const data = await api.install(body);
+      setResult(data);
+      loadInstallations();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function copy(text: string) {
+    navigator.clipboard.writeText(text);
+  }
+
+  const base = window.location.origin;
+
+  return (
+    <div className="grid gap-8 lg:grid-cols-3">
+      <section className="lg:col-span-2 space-y-6">
+        <div className="space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Nueva instalación</h2>
+          <p className="text-muted-foreground">
+            Configura el sistema, obtén tu URL única y arranca por iPXE. Sin USB, sin intervención.
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Terminal className="h-5 w-5 text-cyan-400" />
+              Formulario de despliegue
+            </CardTitle>
+            <CardDescription>Elige perfil, hostname opcional y paquetes extra.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="profile">Perfil</Label>
+                  <Select name="profile" defaultValue="production">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona perfil" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="production">Producción (KDE + servicios)</SelectItem>
+                      <SelectItem value="developer">Desarrollo (GNOME + toolchains)</SelectItem>
+                      <SelectItem value="base">Base (mínimo, sin GUI)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hostname">Hostname</Label>
+                  <Input id="hostname" name="hostname" placeholder="mi-equipo" pattern="[a-z0-9-]+" />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Usuario</Label>
+                  <Input id="username" name="username" placeholder="neubat" pattern="[a-z_][a-z0-9_-]*" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="packages">Paquetes adicionales</Label>
+                  <Input id="packages" name="packages" placeholder="htop btop firefox" />
+                </div>
+              </div>
+
+              <Button type="submit" disabled={submitting} className="w-full">
+                {submitting ? 'Generando...' : 'Generar instalación'}
+              </Button>
+            </form>
+
+            {error && (
+              <div className="mt-4 rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
+
+            {result && (
+              <div className="mt-4 space-y-3 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-4">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">Instalación creada</span>
+                </div>
+                <CopyField label="Token" value={result.token} onCopy={copy} />
+                <CopyField label="URL de arranque iPXE" value={base + result.boot_url} onCopy={copy} />
+                <CopyField label="URL de configuración" value={base + result.config_url} onCopy={copy} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <aside className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wifi className="h-5 w-5 text-cyan-400" />
+              ¿Cómo arrancar?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>1. Crea una instalación.</p>
+            <p>2. Configura iPXE para hacer chain a la URL de arranque.</p>
+            <p>3. La máquina descargará el perfil e instalará Arch automáticamente.</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Server className="h-5 w-5 text-violet-400" />
+              Instalaciones recientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ) : installations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin instalaciones registradas.</p>
+            ) : (
+              <div className="space-y-2">
+                {installations.slice(0, 8).map((i) => (
+                  <div
+                    key={i.token}
+                    className="flex items-center justify-between rounded-md border border-border bg-secondary/50 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <code className="text-xs">{i.token.slice(0, 8)}…</code>
+                      <div className="text-xs text-muted-foreground">{i.profile}</div>
+                    </div>
+                    <Badge variant="outline" className={statusColors[i.status]}>
+                      {i.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </aside>
+    </div>
+  );
+}
+
+function CopyField({ label, value, onCopy }: { label: string; value: string; onCopy: (v: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="flex items-center gap-2 rounded-md border border-border bg-background p-2">
+        <code className="flex-1 truncate text-xs font-mono">{value}</code>
+        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => onCopy(value)}>
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}

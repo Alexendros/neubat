@@ -45,17 +45,12 @@ app.use('/boot', install.bootRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Panel de administración en /admin
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
 // 404 JSON para rutas API no definidas
 app.use('/api', (req, res) => {
     res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
-// Fallback SPA
+// Fallback SPA (React app)
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

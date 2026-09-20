@@ -43,9 +43,9 @@ describe('app integration', () => {
         expect(res.text).toContain('NEUBAT');
     });
 
-    test('/admin sirve admin.html', async () => {
+    test('/admin sirve la SPA React', async () => {
         const res = await request(app).get('/admin').expect(200);
-        expect(res.text).toContain('Admin');
+        expect(res.text).toContain('<div id="root"></div>');
     });
 
     test('API 404 devuelve JSON', async () => {

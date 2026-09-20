@@ -81,3 +81,22 @@ jobs:
 
       - name: Validate Ansible
         run: make test-ansible
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: portal/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: cd portal/frontend && npm ci
+
+      - name: Run frontend tests
+        run: cd portal/frontend && npm test
