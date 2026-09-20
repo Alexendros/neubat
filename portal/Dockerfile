@@ -2,12 +2,19 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Instalar dependencias primero para aprovechar la caché de capas
+# Backend dependencies
 COPY portal/package*.json ./portal/
 RUN cd /app/portal && npm ci --omit=dev
 
-# Copiar todo el repositorio (portal + scripts + configs)
+# Frontend dependencies
+COPY portal/frontend/package*.json ./portal/frontend/
+RUN cd /app/portal/frontend && npm ci
+
+# Copy full repo
 COPY . /app
+
+# Build React SPA into portal/public
+RUN cd /app/portal/frontend && npm run build
 
 WORKDIR /app/portal
 

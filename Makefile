@@ -1,12 +1,18 @@
 # NEUBAT - Makefile
 TAG ?= 1.0.0
 
-.PHONY: portal install-deps validate lint test test-smoke test-vm test-bash test-ansible validate-ansible lint-ansible build-iso release
+.PHONY: portal install-deps install-deps-frontend build-frontend validate lint test test-smoke test-vm test-bash test-ansible validate-ansible lint-ansible test-frontend build-iso release
 
 install-deps:
 	cd portal && npm install
 
-portal: install-deps
+install-deps-frontend:
+	cd portal/frontend && npm install
+
+build-frontend: install-deps-frontend
+	cd portal/frontend && npm run build
+
+portal: build-frontend
 	cd portal && npm start
 
 validate:
@@ -47,6 +53,9 @@ lint-ansible:
 	@command -v ansible-lint >/dev/null 2>&1 && ansible-lint ansible/ || echo "ansible-lint no instalado; omitido"
 
 test-ansible: validate-ansible lint-ansible
+
+test-frontend: install-deps-frontend
+	cd portal/frontend && npm test
 
 # Construir ISO híbrida con autoinstalación (requiere Docker)
 build-iso:
