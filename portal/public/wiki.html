@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEUBAT Wiki</title>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --surface: #141b2a;
+      --surface-2: #1e2740;
+      --text: #e6edf7;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --border: #283350;
+      --term: #f472b6;
+      --ok: #34d399;
+      --warn: #fbbf24;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    #app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "header header"
+        "sidebar main"
+        "footer footer";
+      min-height: 100vh;
+    }
+
+    header {
+      grid-area: header;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem 1.25rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-logo {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid; place-items: center;
+      color: #fff; font-weight: 800;
+    }
+
+    .search {
+      position: relative;
+      flex: 1;
+      max-width: 420px;
+    }
+
+    .search input {
+      width: 100%;
+      padding: 0.55rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+    }
+
+    .search input:focus { border-color: var(--accent); }
+
+    .search-results {
+      position: absolute;
+      top: 110%;
+      left: 0; right: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .search-results.active { display: block; }
+
+    .search-results button {
+      width: 100%;
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-results button:hover { background: rgba(56,189,248,0.08); }
+
+    .search-results .res-category {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.15rem;
+    }
+
+    aside {
+      grid-area: sidebar;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .nav-group { margin-bottom: 1.25rem; }
+    .nav-group-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 0.45rem 0.65rem;
+      border-radius: 6px;
+      color: var(--text);
+      margin-bottom: 0.15rem;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      background: var(--surface-2);
+      text-decoration: none;
+    }
+
+    main {
+      grid-area: main;
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    h1, h2, h3 { color: var(--text); margin-top: 0; }
+    h1 { font-size: 2rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.4rem; }
+    h2 { font-size: 1.45rem; margin-top: 2rem; color: var(--accent); }
+    h3 { font-size: 1.15rem; margin-top: 1.5rem; color: var(--accent-2); }
+
+    p { margin: 0.8rem 0; }
+
+    ul, ol { padding-left: 1.4rem; }
+    li { margin: 0.35rem 0; }
+
+    code {
+      background: var(--surface-2);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: "Fira Code", Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: var(--surface-2);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+    }
+
+    pre code { background: transparent; padding: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th { background: var(--surface-2); color: var(--accent); }
+
+    .term {
+      color: var(--term);
+      border-bottom: 1px dashed var(--term);
+      cursor: help;
+      position: relative;
+    }
+
+    .term abbr { text-decoration: none; color: inherit; }
+
+    .tag {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      margin-right: 0.35rem;
+    }
+
+    .tag.ok { background: rgba(52,211,153,0.15); color: var(--ok); }
+    .tag.warn { background: rgba(251,191,36,0.15); color: var(--warn); }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .card h3 { margin-top: 0; }
+
+    footer {
+      grid-area: footer;
+      padding: 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    #tooltip {
+      position: fixed;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      max-width: 320px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 100;
+    }
+
+    #tooltip.visible { opacity: 1; }
+    #tooltip strong { color: var(--accent); display: block; margin-bottom: 0.25rem; }
+
+    @media (max-width: 800px) {
+      #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+        grid-template-areas:
+          "header"
+          "sidebar"
+          "main"
+          "footer";
+      }
+      aside { border-right: none; border-bottom: 1px solid var(--border); }
+      main { padding: 1rem; }
+      header { flex-wrap: wrap; }
+      .search { order: 3; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <a href="/" class="brand">
+        <div class="brand-logo">N</div>
+        <span>NEUBAT Wiki</span>
+      </a>
+      <div class="search">
+        <input id="searchInput" type="text" placeholder="Buscar artículos, términos..." autocomplete="off" />
+        <div id="searchResults" class="search-results"></div>
+      </div>
+    </header>
+
+    <aside id="sidebar"></aside>
+
+    <main id="content"></main>
+
+    <footer>
+      NEUBAT v1.0.0 · Documentación viva generada desde el repositorio · <a href="https://github.com/Alexendros/neubat">GitHub</a>
+    </footer>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <script>
+    const terms = {
+      "NEUBAT": "Sistema de instalación desatendida de Arch Linux por red (iPXE) con portal web y URLs únicas.",
+      "Arch Linux": "Distribución GNU/Linux rolling-release ligera y flexible, orientada a usuarios avanzados.",
+      "iPXE": "Firmware de arranque por red de código abierto que permite bootear kernels e initramfs vía HTTP/TFTP.",
+      "UEFI": "Unified Extensible Firmware Interface. Interfaz firmware moderna que reemplaza a la BIOS clásica.",
+      "BIOS": "Basic Input/Output System. Firmware legacy para arranque y configuración hardware.",
+      "GPT": "GUID Partition Table. Esquema de particionado moderno requerido por discos grandes y UEFI.",
+      "btrfs": "Sistema de archivos copy-on-write de Linux con compresión, subvolúmenes y snapshots.",
+      "GRUB": "GRand Unified Bootloader. Cargador de arranque usado para iniciar Linux en sistemas UEFI/BIOS.",
+      "systemd": "Suite de gestión de sistemas y servicios init predeterminada en Arch Linux.",
+      "chroot": "Cambio del directorio raíz lógico. Permite configurar un sistema instalado desde el entorno live.",
+      "pacman": "Gestor de paquetes de Arch Linux.",
+      "pacstrap": "Script de Arch que instala el sistema base en un directorio destino usando pacman.",
+      "AUR": "Arch User Repository. Repositorio comunitario de paquetes mantenidos por usuarios.",
+      "Ansible": "Herramienta de automatización IT declarativa basada en YAML y sin agente.",
+      "CI/CD": "Continuous Integration / Continuous Deployment. Automatización de tests, builds y despliegues.",
+      "Docker": "Plataforma de contenedores para empaquetar y ejecutar aplicaciones de forma reproducible.",
+      "ISO": "Image File óptica que contiene una copia exacta de un sistema de archivos; se usa para instaladores.",
+      "NVMe": "Non-Volatile Memory Express. Interfaz de alto rendimiento para SSDs PCIe.",
+      "SSD": "Solid State Drive. Disco de estado sólido sin partes mecánicas.",
+      "HDD": "Hard Disk Drive. Disco duro mecánico tradicional.",
+      "SSH": "Secure Shell. Protocolo para acceso remoto cifrado a sistemas.",
+      "TLS": "Transport Layer Security. Protocolo criptográfico para comunicaciones seguras (HTTPS).",
+      "API": "Application Programming Interface. Interfaz para que sistemas se comuniquen programáticamente.",
+      "SPA": "Single Page Application. Aplicación web que carga una sola página y actualiza el contenido dinámicamente.",
+      "JSON": "JavaScript Object Notation. Formato ligero de intercambio de datos basado en texto.",
+      "YAML": "YAML Ain't Markup Language. Formato de serialización legible por humanos.",
+      "first-boot": "Primera vez que arranca el sistema instalado; se usa para ejecutar configuraciones post-instalación.",
+      "rate-limiting": "Técnica para limitar el número de peticiones por unidad de tiempo y mitigar abuso.",
+      "mkarchiso": "Herramienta oficial de Arch Linux para construir imágenes ISO personalizadas.",
+      "airootfs": "Root filesystem del live ISO de Arch antes de empaquetarse en la imagen.",
+      "reflector": "Utilidad de Arch para ordenar y filtrar mirrors de pacman.",
+      "initramfs": "Sistema de archivos temporal cargado en memoria durante el arranque del kernel.",
+      "kernel": "Núcleo del sistema operativo que gestiona hardware, memoria y procesos.",
+      "Node.js": "Entorno de ejecución de JavaScript del lado del servidor.",
+      "Express": "Framework web minimalista para Node.js.",
+      "Jest": "Framework de testing para JavaScript mantenido por Meta.",
+      "bats": "Bash Automated Testing System. Framework de tests para scripts Bash.",
+      "shellcheck": "Analizador estático para scripts Bash que detecta errores y malas prácticas.",
+      "QEMU": "Quick Emulator. Hypervisor de código abierto para virtualización.",
+      "KVM": "Kernel-based Virtual Machine. Tecnología de virtualización nativa de Linux.",
+      "GitHub Actions": "Servicio de CI/CD integrado en GitHub para automatizar flujos de trabajo.",
+      "artifact": "Archivo generado por un workflow de CI/CD y almacenado temporalmente para descarga.",
+      "release": "Publicación etiquetada de una versión del software, a menudo con binarios adjuntos.",
+      "HTTP": "HyperText Transfer Protocol. Protocolo de comunicación web.",
+      "TFTP": "Trivial File Transfer Protocol. Protocolo simple de transferencia de ficheros, usado en arranque por red.",
+      "DHCP": "Dynamic Host Configuration Protocol. Asigna direcciones IP y parámetros de red automáticamente.",
+      "DNS": "Domain Name System. Sistema que traduce nombres de dominio a direcciones IP.",
+      "firewall": "Sistema que controla el tráfico de red entrante/saliente según reglas de seguridad.",
+      "nginx": "Servidor web/proxy inverso de alto rendimiento."
+    };
+
+    const categories = [
+      {
+        title: "General",
+        items: [
+          { id: "inicio", title: "Inicio" },
+          { id: "concepto", title: "Concepto y filosofía" },
+          { id: "arquitectura", title: "Arquitectura técnica" },
+          { id: "flujo", title: "Flujo de instalación" }
+        ]
+      },
+      {
+        title: "Configuración",
+        items: [
+          { id: "perfiles", title: "Perfiles JSON" },
+          { id: "terminologia", title: "Terminología y siglas" }
+        ]
+      },
+      {
+        title: "Componentes",
+        items: [
+          { id: "portal", title: "Portal web" },
+          { id: "scripts", title: "Scripts del instalador" },
+          { id: "ipxe", title: "Arranque iPXE" },
+          { id: "ansible", title: "Ansible post-instalación" }
+        ]
+      },
+      {
+        title: "Calidad y entrega",
+        items: [
+          { id: "tests", title: "Tests y lint" },
+          { id: "cicd", title: "CI/CD y build-ISO" },
+          { id: "roadmap", title: "Roadmap" }
+        ]
+      }
+    ];
+
+    const articles = {
+      inicio: {
+        title: "Wiki de NEUBAT",
+        body: `
+          <p><strong>NEUBAT</strong> es un sistema de instalación desatendida de <span class="term">Arch Linux</span> por red (<span class="term">iPXE</span>), con un portal web responsive que genera <strong>URLs únicas de configuración</strong>.</p>
+
+          <div class="hero-grid">
+            <div class="card">
+              <h3>Zero-touch</h3>
+              <p>Cero intervención tras seleccionar el perfil en el portal.</p>
+            </div>
+            <div class="card">
+              <h3>Infraestructura como código</h3>
+              <p>Configuración versionada en <span class="term">JSON</span>, scripts <span class="term">Bash</span> y <span class="term">Ansible</span>.</p>
+            </div>
+            <div class="card">
+              <h3>Rolling release</h3>
+              <p>Sistema siempre actualizado sin migraciones traumáticas.</p>
+            </div>
+            <div class="card">
+              <h3>Monolito recortado</h3>
+              <p>Sistema mínimo y optimizado para su propósito.</p>
+            </div>
+          </div>
+
+          <h2>Objetivos medibles</h2>
+          <table>
+            <tr><th>#</th><th>Objetivo</th><th>Métrica</th></tr>
+            <tr><td>1</td><td>Portal responsive</td><td>Accesible móvil/desktop, carga &lt; 2 s</td></tr>
+            <tr><td>2</td><td>URL generada post-instalación</td><td>URL única funcional en &lt; 5 min desde arranque</td></tr>
+            <tr><td>3</td><td>Instalación desatendida</td><td>0 intervenciones tras selección inicial</td></tr>
+          </table>
+
+          <p>Pasa el ratón sobre los términos resaltados en color rosa para ver su definición.</p>
+        `
+      },
+      concepto: {
+        title: "Concepto y filosofía",
+        body: `
+          <h2>Definición</h2>
+          <p><strong>NEUBAT</strong> permite desplegar un entorno <span class="term">Arch Linux</span> completo, preconfigurado y funcional desde Internet, sin medios físicos (<span class="term">USB</span>/<span class="term">CD</span>).</p>
+
+          <h2>Principios fundamentales</h2>
+          <ul>
+            <li><strong>Zero-touch deployment:</strong> la máquina se instala sola tras arrancar por red.</li>
+            <li><strong>Infrastructure as Code:</strong> toda la configuración vive en el repositorio.</li>
+            <li><strong>Rolling release:</strong> <span class="term">Arch Linux</span> se mantiene actualizado continuamente.</li>
+            <li><strong>Monolito recortado:</strong> solo los paquetes y servicios necesarios.</li>
+          </ul>
+
+          <h2>Audiencia</h2>
+          <p>Administradores de sistemas, DevOps, técnicos de despliegue masivo y entusiastas de <span class="term">Arch Linux</span> que necesiten instalar equipos de forma remota y reproducible.</p>
+        `
+      },
+      arquitectura: {
+        title: "Arquitectura técnica",
+        body: `
+          <h2>Capas del sistema</h2>
+          <table>
+            <tr><th>Capa</th><th>Componente</th><th>Tecnología</th><th>Función</th></tr>
+            <tr><td>Presentación</td><td>Portal web</td><td><span class="term">Node.js</span> + <span class="term">Express</span> + SPA</td><td>Interfaz de usuario y generación de config</td></tr>
+            <tr><td>Distribución</td><td>Servidor iPXE</td><td>iPXE + <span class="term">HTTP</span>/<span class="term">TFTP</span></td><td>Arranque por red</td></tr>
+            <tr><td>Instalación</td><td>Archinstall/scripts</td><td><span class="term">Python</span> + <span class="term">Bash</span> + <span class="term">JSON</span></td><td>Sistema base desatendido</td></tr>
+            <tr><td>Configuración</td><td>Preconfigurador</td><td><span class="term">Bash</span> + <span class="term">Python</span></td><td>Personalización por token</td></tr>
+            <tr><td>Post-instalación</td><td>First-boot</td><td><span class="term">systemd</span> + <span class="term">Ansible</span></td><td>Servicios, aplicaciones y portal local</td></tr>
+          </table>
+
+          <h2>Diagrama de flujo</h2>
+          <pre><code>Usuario ──▶ Portal NEUBAT ──▶ URL/token único
+                                    │
+                                    ▼
+Arranque iPXE/HTTP ◀── Post-script (first-boot)
+       │
+       ▼
+Archinstall desatendido ──▶ Sistema instalado + portal local</code></pre>
+        `
+      },
+      flujo: {
+        title: "Flujo de instalación",
+        body: `
+          <h2>Pasos</h2>
+          <ol>
+            <li>El usuario accede al portal y elige perfil, hostname, usuario y paquetes extra.</li>
+            <li>El portal genera un <code>token</code> y una <code>boot_url</code> personalizada.</li>
+            <li>La máquina destino arranca por <span class="term">iPXE</span> apuntando a la <code>boot_url</code>.</li>
+            <li>Se descargan kernel e <span class="term">initramfs</span> de <span class="term">Arch Linux</span>.</li>
+            <li>El instalador <code>neubat-install.sh</code> obtiene la configuración vía token.</li>
+            <li>Se particiona el disco (<span class="term">GPT</span>/<span class="term">UEFI</span>/<span class="term">btrfs</span>), se instala el sistema base y se configura en <span class="term">chroot</span>.</li>
+            <li>En el primer arranque, <span class="term">Ansible</span> aplica la post-instalación.</li>
+            <li>El portal local queda disponible y se genera la URL única de setup.</li>
+          </ol>
+        `
+      },
+      perfiles: {
+        title: "Perfiles JSON",
+        body: `
+          <h2>Perfiles disponibles</h2>
+          <table>
+            <tr><th>Perfil</th><th>Escritorio</th><th>Casos de uso</th></tr>
+            <tr><td><code>base.json</code></td><td>ninguno</td><td>Servidores, VMs, entornos mínimos</td></tr>
+            <tr><td><code>production.json</code></td><td>KDE</td><td>Estaciones de trabajo con servicios</td></tr>
+            <tr><td><code>developer.json</code></td><td>GNOME</td><td>Desarrollo con toolchains y contenedores</td></tr>
+          </table>
+
+          <h2>Campos principales</h2>
+          <ul>
+            <li><code>hostname</code>: nombre de la máquina.</li>
+            <li><code>username</code>: usuario administrador.</li>
+            <li><code>disk</code>: disco destino (ej. <code>/dev/nvme0n1</code>).</li>
+            <li><code>desktop</code>: entorno gráfico (<code>none</code>, <code>kde</code>, <code>gnome</code>, <code>xfce</code>).</li>
+            <li><code>packages</code>: lista de paquetes adicionales.</li>
+            <li><code>services</code>: servicios a habilitar.</li>
+            <li><code>timezone</code>, <code>locale</code>, <code>keyboard</code>: regionalización.</li>
+          </ul>
+        `
+      },
+      terminologia: {
+        title: "Terminología y siglas",
+        body: `
+          <h2>Glosario</h2>
+          <p>Pasa el ratón sobre cada término para ver su descripción.</p>
+          <ul>
+            ${Object.entries(terms).map(([k, v]) => `<li><span class="term">${k}</span> — ${v}</li>`).join('')}
+          </ul>
+        `
+      },
+      portal: {
+        title: "Portal web",
+        body: `
+          <h2>API REST</h2>
+          <table>
+            <tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr>
+            <tr><td><span class="term">GET</span></td><td><code>/api/health</code></td><td>Health check</td></tr>
+            <tr><td><span class="term">POST</span></td><td><code>/api/install</code></td><td>Crear nueva instalación</td></tr>
+            <tr><td><span class="term">GET</span></td><td><code>/api/config/:token</code></td><td>Obtener configuración del instalador</td></tr>
+            <tr><td><span class="term">POST</span></td><td><code>/api/complete</code></td><td>Marcar instalación como completada</td></tr>
+            <tr><td><span class="term">GET</span></td><td><code>/api/installations</code></td><td>Listar instalaciones (admin)</td></tr>
+            <tr><td><span class="term">GET</span></td><td><code>/boot/:token</code></td><td>Script iPXE personalizado</td></tr>
+          </table>
+
+          <h2>Panel de administración</h2>
+          <p>Disponible en <code>/admin</code> y protegido por la variable de entorno <code>ADMIN_TOKEN</code>. Permite gestionar instalaciones: listar, filtrar, resetear, completar y eliminar.</p>
+
+          <h2>Frontend</h2>
+          <p>La interfaz es una <span class="term">SPA</span> ligera servida desde <code>public/index.html</code>. Es responsive y funciona tanto en móvil como en escritorio.</p>
+        `
+      },
+      scripts: {
+        title: "Scripts del instalador",
+        body: `
+          <h2>Módulos</h2>
+          <table>
+            <tr><th>Script</th><th>Fase</th><th>Responsabilidad</th></tr>
+            <tr><td><code>00-preinstall.sh</code></td><td>0</td><td>Validaciones previas (red, <span class="term">UEFI</span>, espacio)</td></tr>
+            <tr><td><code>10-partition.sh</code></td><td>1</td><td>Particionado <span class="term">GPT</span> con <span class="term">btrfs</span></td></tr>
+            <tr><td><code>20-archinstall.sh</code></td><td>2</td><td>Descarga de config y <code>pacstrap</code> base</td></tr>
+            <tr><td><code>30-postinstall.sh</code></td><td>3</td><td>Configuración en <span class="term">chroot</span> y aplicaciones</td></tr>
+            <tr><td><code>40-portal-deploy.sh</code></td><td>4</td><td>Portal local + URL única</td></tr>
+            <tr><td><code>50-firstboot-ansible.sh</code></td><td>5</td><td>Preparar post-instalación <span class="term">Ansible</span></td></tr>
+            <tr><td><code>neubat-install.sh</code></td><td>orquestador</td><td>Script maestro que carga los módulos</td></tr>
+          </table>
+
+          <h2>Utilidades compartidas</h2>
+          <p><code>scripts/lib/utils.sh</code> exporta <code>part_name()</code> y <code>cfg_get()</code>, testeadas con <span class="term">bats</span>.</p>
+        `
+      },
+      ipxe: {
+        title: "Arranque iPXE",
+        body: `
+          <h2>Script de arranque</h2>
+          <p>El archivo <code>netboot/ipxe/neubat.ipxe</code> configura <span class="term">DHCP</span>, muestra un menú de selección (producción, desarrollo, mínimo) y descarga el kernel de <span class="term">Arch Linux</span> junto con su <span class="term">initramfs</span>.</p>
+
+          <h2>Kernel cmdline</h2>
+          <pre><code>archiso_http_srv=&lt;url&gt;/arch/ ip=dhcp neubat_token=&lt;token&gt; neubat_profile=&lt;perfil&gt;</code></pre>
+
+          <h2>Fallback</h2>
+          <p><code>netboot/grub/loopback.cfg</code> permite arrancar la <span class="term">ISO</span> desde disco mediante <span class="term">GRUB</span> loopback.</p>
+        `
+      },
+      ansible: {
+        title: "Ansible post-instalación",
+        body: `
+          <h2>Estructura</h2>
+          <pre><code>ansible/
+├── ansible.cfg
+├── inventory/local.yml
+├── site.yml
+├── roles/neubat/
+│   ├── defaults/main.yml
+│   ├── handlers/main.yml
+│   ├── tasks/main.yml
+│   └── templates/
+└── run-firstboot.sh</code></pre>
+
+          <h2>Flujo</h2>
+          <ol>
+            <li>El instalador copia <code>ansible/</code> a <code>/opt/neubat-ansible</code> del sistema destino.</li>
+            <li><code>scripts/generate-ansible-vars.py</code> crea <code>generated/neubat-ansible-vars.yml</code> desde el <span class="term">JSON</span> de configuración.</li>
+            <li>Se habilita <code>neubat-firstboot.service</code> con <code>ConditionFirstBoot=yes</code>.</li>
+            <li>En el primer arranque, <span class="term">Ansible</span> instala paquetes, habilita servicios, despliega el portal local y genera la URL de setup.</li>
+          </ol>
+
+          <p>Ver <a href="/">docs/ANSIBLE.md</a> para uso manual.</p>
+        `
+      },
+      tests: {
+        title: "Tests y lint",
+        body: `
+          <h2>Portal</h2>
+          <p>Tests unitarios y de integración con <span class="term">Jest</span> y Supertest en <code>portal/tests/</code>.</p>
+
+          <h2>Scripts Bash</h2>
+          <p>Tests de <code>part_name()</code> y <code>cfg_get()</code> con <span class="term">bats</span> en <code>tests/bash/utils.bats</code>.</p>
+
+          <h2>Lint</h2>
+          <p><span class="term">shellcheck</span> sobre todos los scripts y validación de <span class="term">JSON</span>/<span class="term">YAML</span>.</p>
+
+          <h2>Targets útiles</h2>
+          <pre><code>make validate
+make lint
+make test
+make test-bash
+make validate-ansible</code></pre>
+        `
+      },
+      cicd: {
+        title: "CI/CD y build-ISO",
+        body: `
+          <h2>Workflows</h2>
+          <table>
+            <tr><th>Workflow</th><th>Trigger</th><th>Resultado</th></tr>
+            <tr><td><code>ci.yml</code></td><td>push/PR a <code>main</code></td><td>validate, test, lint, test-bash, ansible</td></tr>
+            <tr><td><code>build-iso.yml</code></td><td>manual o tags <code>v*</code></td><td>ISO híbrida + release</td></tr>
+          </table>
+
+          <h2>Build ISO</h2>
+          <p>El workflow construye la imagen con Docker + <code>mkarchiso</code>, sube el artefacto y, si el trigger es un tag, crea automáticamente una <span class="term">release</span> en <span class="term">GitHub</span>.</p>
+
+          <pre><code>make build-iso TAG=1.0.0</code></pre>
+        `
+      },
+      roadmap: {
+        title: "Roadmap",
+        body: `
+          <h2>Próximos pasos</h2>
+          <ul>
+            <li><span class="tag ok">Hecho</span> Tests del portal (Jest + Supertest)</li>
+            <li><span class="tag ok">Hecho</span> Tests y lint de scripts Bash</li>
+            <li><span class="tag ok">Hecho</span> Ansible post-instalación</li>
+            <li><span class="tag ok">Hecho</span> CI para build-ISO</li>
+            <li><span class="tag warn">Pendiente</span> Panel de administración avanzado</li>
+            <li><span class="tag warn">Pendiente</span> Integración con <span class="term">Terraform</span> o <span class="term">Pulumi</span> para infraestructura cloud</li>
+            <li><span class="tag warn">Pendiente</span> Métricas y telemetría de instalaciones</li>
+            <li><span class="tag warn">Pendiente</span> Soporte <span class="term">TLS</span> automático para el portal</li>
+          </ul>
+        `
+      }
+    };
+
+    function escapeRegExp(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function enrichText(html) {
+      const keys = Object.keys(terms).sort((a, b) => b.length - a.length);
+      keys.forEach(term => {
+        const re = new RegExp(`(?<!<[^>]*)\\b(${escapeRegExp(term)})\\b`, 'gi');
+        html = html.replace(re, `<span class="term" data-term="${term}">$1</span>`);
+      });
+      return html;
+    }
+
+    function renderArticle(id) {
+      const article = articles[id];
+      if (!article) return;
+      document.getElementById('content').innerHTML = `
+        <h1>${article.title}</h1>
+        ${enrichText(article.body)}
+      `;
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[data-id="${id}"]`);
+      if (active) active.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      attachTooltips();
+    }
+
+    function renderSidebar() {
+      const sb = document.getElementById('sidebar');
+      sb.innerHTML = categories.map(cat => `
+        <div class="nav-group">
+          <div class="nav-group-title">${cat.title}</div>
+          ${cat.items.map(item => `<a href="#${item.id}" class="nav-link" data-id="${item.id}">${item.title}</a>`).join('')}
+        </div>
+      `).join('');
+
+      sb.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          const id = link.getAttribute('data-id');
+          renderArticle(id);
+          history.pushState({ id }, '', `#${id}`);
+        });
+      });
+    }
+
+    function attachTooltips() {
+      const tooltip = document.getElementById('tooltip');
+      document.querySelectorAll('.term').forEach(el => {
+        const term = el.getAttribute('data-term');
+        const def = terms[term];
+        if (!def) return;
+
+        el.addEventListener('mouseenter', () => {
+          tooltip.innerHTML = `<strong>${term}</strong>${def}`;
+          tooltip.classList.add('visible');
+        });
+
+        el.addEventListener('mousemove', e => {
+          const x = e.clientX + 12;
+          const y = e.clientY + 12;
+          const rect = tooltip.getBoundingClientRect();
+          tooltip.style.left = Math.min(x, window.innerWidth - rect.width - 8) + 'px';
+          tooltip.style.top = Math.min(y, window.innerHeight - rect.height - 8) + 'px';
+        });
+
+        el.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('visible');
+        });
+      });
+    }
+
+    function setupSearch() {
+      const input = document.getElementById('searchInput');
+      const results = document.getElementById('searchResults');
+
+      function getIndex() {
+        const list = [];
+        Object.entries(articles).forEach(([id, art]) => {
+          list.push({ id, title: art.title, category: 'Artículo', text: art.body.replace(/<[^>]+>/g, ' ') });
+        });
+        Object.entries(terms).forEach(([term, def]) => {
+          list.push({ id: 'terminologia', title: term, category: 'Término', text: def });
+        });
+        return list;
+      }
+
+      input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        results.innerHTML = '';
+        if (!q) { results.classList.remove('active'); return; }
+
+        const matches = getIndex().filter(item =>
+          item.title.toLowerCase().includes(q) || item.text.toLowerCase().includes(q)
+        ).slice(0, 8);
+
+        if (matches.length === 0) {
+          results.innerHTML = '<button disabled>Sin resultados</button>';
+        } else {
+          results.innerHTML = matches.map(m => `
+            <button data-target="${m.id}">
+              <div class="res-category">${m.category}</div>
+              <div>${m.title}</div>
+            </button>
+          `).join('');
+        }
+        results.classList.add('active');
+
+        results.querySelectorAll('button[data-target]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-target');
+            renderArticle(id);
+            history.pushState({ id }, '', `#${id}`);
+            input.value = '';
+            results.classList.remove('active');
+          });
+        });
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.search')) results.classList.remove('active');
+      });
+    }
+
+    window.addEventListener('popstate', e => {
+      const id = (e.state && e.state.id) || location.hash.slice(1) || 'inicio';
+      renderArticle(id);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSidebar();
+      setupSearch();
+      const initial = location.hash.slice(1) || 'inicio';
+      renderArticle(initial);
+    });
+  </script>
+</body>
+</html>
