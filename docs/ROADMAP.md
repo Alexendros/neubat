@@ -9,6 +9,7 @@
 | P1 | Generación de ISO híbrida con hook de autoinstalación | Dev | 4h | ✅ Hecho (19-sep-2026) |
 | P1 | Endurecer sudoers post-instalación (retirar NOPASSWD) | Dev | 1h | ✅ Hecho (19-sep-2026, automático al final de `30-postinstall.sh`) |
 | P2 | Panel de administración web para seguimiento | Frontend | 8h | ✅ Hecho (19-sep-2026) |
+| P1 | Publicar release v1.0.0 con ISO híbrida en GitHub | DevOps | 1h | ✅ Hecho (20-sep-2026) |
 | P2 | Integración con Ansible para configuración post-instalación | DevOps | 6h | Pendiente |
 | P2 | Soporte de cifrado LUKS en particionado | Dev | 4h | Pendiente |
 | P3 | Snapshots btrfs automáticos pre/post actualización | Dev | 3h | Pendiente |

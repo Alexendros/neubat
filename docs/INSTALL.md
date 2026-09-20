@@ -1,7 +1,7 @@
 # NEUBAT — Documento Maestro de Instalación y Despliegue
 
 **Versión:** 1.0.0
-**Fecha:** 19 de septiembre de 2026
+**Fecha:** 20 de septiembre de 2026
 **Arquitectura:** x86_64
 **Sistema base:** Arch Linux (rolling release)
 **Entorno:** Producción — SSD/HDD bare metal
@@ -35,6 +35,23 @@ NEUBAT es un sistema de instalación desatendida de Arch Linux que despliega un 
 
 ## 3. Despliegue del portal
 
+### Docker Compose (recomendado)
+
+```bash
+cp .env.example .env   # opcional: ajusta ADMIN_TOKEN y NEUBAT_MIRROR_BASE
+docker compose up -d
+```
+
+Variables de entorno útiles:
+
+| Variable | Descripción | Defecto |
+|----------|-------------|---------|
+| `ADMIN_TOKEN` | Token para el panel `/admin` | — (panel deshabilitado si falta) |
+| `NEUBAT_MIRROR_BASE` | Mirror base para el netboot iPXE | `https://geo.mirror.pkgbuild.com/iso/latest` |
+| `NEUBAT_PORT` | Puerto expuesto del portal | `3000` |
+
+### Node.js nativo
+
 ```bash
 cd portal
 npm install
@@ -56,13 +73,39 @@ Como servicio systemd, usar como plantilla la unidad que genera `scripts/40-port
 | GET | `/api/health` | Health check |
 | GET | `/boot/:token` | Script iPXE personalizado para el token |
 
+### Panel de administración
+
+Disponible en `/admin`. Requiere `ADMIN_TOKEN`. Endpoints bajo `/api/admin`:
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/admin/installations` | Listado completo de instalaciones |
+| POST | `/api/admin/installations/:token/status` | Actualizar estado/hostname/error |
+| POST | `/api/admin/installations/:token/reset` | Volver a estado `pending` |
+| DELETE | `/api/admin/installations/:token` | Eliminar registro y config |
+
 El portal aplica rate-limiting (100 req / 15 min por IP) en `/api/*`. Para exposición pública, desplegar detrás de un reverse proxy con TLS.
 
 Variable de entorno opcional: `NEUBAT_MIRROR_BASE` — mirror base para el netboot iPXE (defecto: `https://geo.mirror.pkgbuild.com/iso/latest`). Apúntala a una caché local (`deploy/pacman-cache/`) cuando el firmware iPXE no tenga HTTPS compilado o para acelerar los arranques por red.
 
-## 4. Flujo de instalación
+## 4. Construcción de la ISO híbrida
 
-### 4.1 Crear la instalación
+Para generar una ISO personalizada a partir del código actual (requiere Docker):
+
+```bash
+make build-iso
+# Salida: out/neubat-1.0.0-x86_64.iso
+```
+
+El proceso usa un contenedor Arch Linux con `archiso`, remasteriza el perfil `releng`, inyecta `/opt/neubat` y habilita `neubat-autoinstall.service`. Para publicar la ISO en GitHub:
+
+```bash
+make release
+```
+
+## 5. Flujo de instalación
+
+### 5.1 Crear la instalación
 
 Desde la web (`http://<portal>/`) o por API:
 
@@ -74,12 +117,20 @@ curl -X POST http://<portal>:3000/api/install \
 
 Respuesta: `token`, `config_url`, `boot_url`.
 
-### 4.2 Arrancar la máquina destino
+### 5.2 Arrancar la máquina destino
 
 - **Por red (recomendado):** encadenar iPXE a `http://<portal>:3000/boot/<token>`, o usar `netboot/ipxe/neubat.ipxe` (menú interactivo).
+- **ISO híbrida autoinstalable:** descarga `neubat-1.0.0-x86_64.iso` desde la [release v1.0.0](https://github.com/Alexendros/neubat/releases/tag/v1.0.0) y arranca la máquina pasando el token por kernel cmdline:
+
+  ```
+  neubat_token=<token> neubat_profile=production neubat_portal_url=http://<portal>:3000
+  ```
+
+  El servicio `neubat-autoinstall.service` del live ISO lee esos parámetros y ejecuta el instalador de forma desatendida.
+
 - **Fallback USB/disco:** `netboot/grub/loopback.cfg` arranca el ISO almacenado en disco sin reescribir el medio.
 
-### 4.3 Ejecutar el instalador (desde el live ISO)
+### 5.3 Ejecutar el instalador (desde el live ISO)
 
 ```bash
 export NEUBAT_PORTAL_URL="http://<portal>:3000"
@@ -102,7 +153,7 @@ bash scripts/neubat-install.sh <token> [perfil]
 | 5 | `40-portal-deploy.sh` | Portal local + `~/NEUBAT-URL.txt` |
 | 6 | maestro | Notificación al portal, resumen y reinicio |
 
-## 5. Esquema de particionado
+## 6. Esquema de particionado
 
 | Partición | Tamaño | FS | Montaje |
 |-----------|--------|-----|---------|
@@ -113,7 +164,7 @@ bash scripts/neubat-install.sh <token> [perfil]
 
 Los nombres de partición se resuelven con `part_name()` (soporta `/dev/sda1` y `/dev/nvme0n1p1`).
 
-## 6. Perfiles de configuración
+## 7. Perfiles de configuración
 
 Los perfiles viven en `configs/` (`base`, `production`, `developer`). Claves:
 
@@ -128,7 +179,7 @@ Los perfiles viven en `configs/` (`base`, `production`, `developer`). Claves:
 | `services` | — | Servicios systemd a habilitar |
 | `timezone` / `locale` / `keyboard` | Madrid / es_ES / es | Regionalización |
 
-## 7. Portal local post-instalación
+## 8. Portal local post-instalación
 
 El sistema instalado incluye `neubat-portal.service` (Node.js en :3000, usuario no-root, código en `/opt/neubat-portal`). La URL única de setup queda en `~/NEUBAT-URL.txt`:
 
@@ -136,7 +187,7 @@ El sistema instalado incluye `neubat-portal.service` (Node.js en :3000, usuario 
 http://<hostname>.local:3000/setup/<machine-id-corto>
 ```
 
-## 8. Validación post-instalación
+## 9. Validación post-instalación
 
 ```bash
 bash scripts/validate-install.sh
@@ -144,14 +195,14 @@ bash scripts/validate-install.sh
 
 Comprueba: `/etc/neubat-release`, hostname, usuario no-root, Internet, NetworkManager, sshd, Docker, portal local, espacio en disco y fstab. Devuelve código de salida no nulo si algo falla.
 
-## 9. Notas de seguridad
+## 10. Notas de seguridad
 
 - La construcción desatendida de paquetes AUR (yay) requiere `NOPASSWD` temporal en `%wheel`; **el instalador lo retira automáticamente** al terminar (`/etc/sudoers.d/neubat` queda `%wheel ALL=(ALL:ALL) ALL`).
 - Cambiar las contraseñas iniciales de usuario y root en el primer acceso.
 - Los tokens son hex aleatorios de 128 bits; el portal valida su formato antes de tocar el sistema de archivos.
 - `boot_url` y `config_url` no llevan autenticación: quien posea el token puede descargar la configuración. Tratar los tokens como secretos y, en producción, servir bajo TLS.
 
-## 10. Solución de problemas
+## 11. Solución de problemas
 
 | Síntoma | Causa probable | Acción |
 |---------|----------------|--------|
@@ -161,7 +212,7 @@ Comprueba: `/etc/neubat-release`, hostname, usuario no-root, Internet, NetworkMa
 | Portal local no responde | `npm install` falló en destino | `cd /opt/neubat-portal && npm install --omit=dev && systemctl restart neubat-portal` |
 | Log completo | — | `/var/log/neubat-install.log` (en el entorno live) |
 
-## 11. Pruebas en VM (QEMU/KVM)
+## 12. Pruebas en VM (QEMU/KVM)
 
 Lecciones aprendidas al validar NEUBAT en QEMU con disco NVMe virtual:
 
@@ -193,4 +244,4 @@ Para iterar rápido, usar la caché de paquetes de `deploy/pacman-cache/`.
 
 ---
 
-**Hash de verificación del documento:** `neubat-doc-v1.0-20260919`
+**Hash de verificación del documento:** `neubat-doc-v1.0-20260920`

@@ -32,15 +32,20 @@ neubat/
 ├── portal/                    # Portal web (Node.js + Express)
 │   ├── server.js              # Servidor principal
 │   ├── package.json
+│   ├── Dockerfile             # Imagen de producción del portal
 │   ├── lib/db.js              # Persistencia JSON y utilidades
 │   ├── routes/install.js      # API: creación y entrega de configs, boot iPXE
+│   ├── routes/admin.js        # API de administración
 │   ├── routes/status.js       # API: health y listado de instalaciones
-│   └── public/index.html      # Frontend responsive (SPA ligera)
+│   ├── public/index.html      # Frontend responsive (SPA ligera)
+│   └── public/admin.html      # Panel de administración
 ├── netboot/
 │   ├── ipxe/neubat.ipxe       # Menú de arranque por red
 │   └── grub/loopback.cfg      # Fallback: arranque de ISO desde disco (GRUB loopback)
 ├── scripts/
 │   ├── neubat-install.sh      # Script maestro (orquestador)
+│   ├── build-iso.sh           # Generador de ISO híbrida (Docker + archiso)
+│   ├── build-iso-inner.sh     # Script interno de construcción de la ISO
 │   ├── 00-preinstall.sh       # Validaciones previas
 │   ├── 10-partition.sh        # Particionado automático (GPT/UEFI/btrfs, NVMe-safe)
 │   ├── 20-archinstall.sh      # Config remota + sistema base (pacstrap)
@@ -51,6 +56,8 @@ neubat/
 │   ├── base.json              # Perfil mínimo (sin GUI)
 │   ├── production.json        # Perfil producción (KDE + servicios)
 │   └── developer.json         # Perfil desarrollo (GNOME + toolchains)
+├── iso/                       # Overlay del live ISO (servicio de autoinstalación)
+│   └── airootfs/
 ├── deploy/
 │   └── pacman-cache/          # Proxy caché nginx de paquetes pacman (opcional)
 ├── tests/
@@ -58,7 +65,9 @@ neubat/
 └── docs/
     ├── INSTALL.md             # Documento maestro de instalación y despliegue
     ├── ARCHITECTURE.md        # Arquitectura técnica y diagrama de flujo
-    └── ROADMAP.md             # Próximos pasos
+    ├── ROADMAP.md             # Próximos pasos
+    ├── RELEASE-v1.0.0.md      # Notas de la release v1.0.0
+    └── assets/                # Capturas de pantalla
 ```
 
 ## Quickstart
@@ -129,6 +138,19 @@ bash scripts/validate-install.sh
 - [docs/INSTALL.md](docs/INSTALL.md) — documento maestro completo
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — diagrama de flujo y componentes
 - [docs/ROADMAP.md](docs/ROADMAP.md) — próximos pasos
+
+## Descarga de la ISO
+
+La release **v1.0.0** incluye la ISO híbrida lista para arrancar:
+
+- [`neubat-1.0.0-x86_64.iso`](https://github.com/Alexendros/neubat/releases/download/v1.0.0/neubat-1.0.0-x86_64.iso) (1.6 GB)
+- [`neubat-1.0.0-x86_64.iso.sha256`](https://github.com/Alexendros/neubat/releases/download/v1.0.0/neubat-1.0.0-x86_64.iso.sha256)
+
+Verifica:
+
+```bash
+sha256sum -c neubat-1.0.0-x86_64.iso.sha256
+```
 
 ## Panel de administración
 
