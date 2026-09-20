@@ -17,7 +17,7 @@ validate:
 	@for f in configs/*.json; do python3 -m json.tool $$f > /dev/null && echo "OK $$f"; done
 
 lint:
-	@command -v shellcheck >/dev/null && shellcheck scripts/*.sh || echo "shellcheck no instalado; omitido"
+	@command -v shellcheck >/dev/null 2>&1 && shellcheck -x scripts/*.sh || echo "shellcheck no instalado; omitido"
 
 test:
 	cd portal && npm test
@@ -35,7 +35,7 @@ test-vm:
 	python3 tests/vm/neubat_vm_test.py
 
 test-bash:
-	@echo "Ejecuta: bats tests/bash/*.bats"
+	@command -v bats >/dev/null 2>&1 && bats tests/bash/*.bats || echo "bats no instalado; omitido"
 
 # Construir ISO híbrida con autoinstalación (requiere Docker)
 build-iso:

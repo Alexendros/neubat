@@ -26,23 +26,23 @@ fetch_configuration() {
     # Extraer parámetros clave (sin jq: python3 garantizado en el ISO).
     # Estas variables se consumen en los módulos 10/30/40 (archivos sourced).
     # shellcheck disable=SC2034
-    DISK=$(cfg_get disk "/dev/sda")
+    DISK=$(cfg_get "${NEUBAT_CONFIG_FILE}" disk "/dev/sda")
     # shellcheck disable=SC2034
-    HOSTNAME=$(cfg_get hostname "neubat")
+    HOSTNAME=$(cfg_get "${NEUBAT_CONFIG_FILE}" hostname "neubat")
     # shellcheck disable=SC2034
-    USERNAME=$(cfg_get username "neubat")
+    USERNAME=$(cfg_get "${NEUBAT_CONFIG_FILE}" username "neubat")
     # shellcheck disable=SC2034
-    PASSWORD=$(cfg_get password "neubat")
+    PASSWORD=$(cfg_get "${NEUBAT_CONFIG_FILE}" password "neubat")
     # shellcheck disable=SC2034
-    DESKTOP=$(cfg_get desktop "none")
+    DESKTOP=$(cfg_get "${NEUBAT_CONFIG_FILE}" desktop "none")
     # shellcheck disable=SC2034
-    PACKAGES=$(cfg_get packages "")
+    PACKAGES=$(cfg_get "${NEUBAT_CONFIG_FILE}" packages "")
     # shellcheck disable=SC2034
-    TIMEZONE=$(cfg_get timezone "Europe/Madrid")
+    TIMEZONE=$(cfg_get "${NEUBAT_CONFIG_FILE}" timezone "Europe/Madrid")
     # shellcheck disable=SC2034
-    LOCALE=$(cfg_get locale "es_ES.UTF-8")
+    LOCALE=$(cfg_get "${NEUBAT_CONFIG_FILE}" locale "es_ES.UTF-8")
     # shellcheck disable=SC2034
-    KEYMAP=$(cfg_get keyboard "es")
+    KEYMAP=$(cfg_get "${NEUBAT_CONFIG_FILE}" keyboard "es")
 
     if [[ "${PASSWORD}" == "neubat" ]]; then
         warning "Contraseña por defecto en uso. Cámbiala en el primer acceso."

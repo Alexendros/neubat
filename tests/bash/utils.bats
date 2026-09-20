@@ -1,0 +1,57 @@
+#!/usr/bin/env bats
+# =============================================================================
+# NEUBAT - Tests unitarios de utilidades Bash
+# =============================================================================
+
+setup() {
+    UTILS="${BATS_TEST_DIRNAME}/../../scripts/lib/utils.sh"
+    [[ -f "${UTILS}" ]]
+    # shellcheck source=scripts/lib/utils.sh
+    source "${UTILS}"
+
+    TMP_CONFIG="$(mktemp)"
+    cat > "${TMP_CONFIG}" <<'JSON'
+{
+  "hostname": "neubat-test",
+  "username": "tester",
+  "packages": ["docker", "nodejs", "npm"],
+  "desktop": "none",
+  "missing": null
+}
+JSON
+}
+
+teardown() {
+    [[ -f "${TMP_CONFIG}" ]] && rm -f "${TMP_CONFIG}"
+}
+
+@test "part_name añade número directo para discos sin numeración" {
+    [ "$(part_name /dev/sda 1)" = "/dev/sda1" ]
+    [ "$(part_name /dev/vda 2)" = "/dev/vda2" ]
+    [ "$(part_name /dev/xvdb 3)" = "/dev/xvdb3" ]
+}
+
+@test "part_name usa sufijo 'p' para discos con numeración" {
+    [ "$(part_name /dev/nvme0n1 1)" = "/dev/nvme0n1p1" ]
+    [ "$(part_name /dev/mmcblk0 2)" = "/dev/mmcblk0p2" ]
+    [ "$(part_name /dev/loop0 1)" = "/dev/loop0p1" ]
+}
+
+@test "cfg_get devuelve valor de cadena" {
+    [ "$(cfg_get "${TMP_CONFIG}" hostname)" = "neubat-test" ]
+    [ "$(cfg_get "${TMP_CONFIG}" username)" = "tester" ]
+    [ "$(cfg_get "${TMP_CONFIG}" desktop)" = "none" ]
+}
+
+@test "cfg_get devuelve valor por defecto cuando falta la clave" {
+    [ "$(cfg_get "${TMP_CONFIG}" nonexistent "fallback")" = "fallback" ]
+    [ "$(cfg_get "${TMP_CONFIG}" nonexistent)" = "" ]
+}
+
+@test "cfg_get devuelve lista como espacios" {
+    [ "$(cfg_get "${TMP_CONFIG}" packages)" = "docker nodejs npm" ]
+}
+
+@test "cfg_get devuelve valor por defecto cuando el valor es null" {
+    [ "$(cfg_get "${TMP_CONFIG}" missing "default")" = "default" ]
+}

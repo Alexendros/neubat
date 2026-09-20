@@ -125,7 +125,7 @@ install_applications() {
 
     # Habilitar servicios declarados en la configuración
     local services
-    services=$(cfg_get services "")
+    services=$(cfg_get "${NEUBAT_CONFIG_FILE}" services "")
     local svc
     for svc in ${services}; do
         arch-chroot /mnt systemctl enable "${svc}" \
