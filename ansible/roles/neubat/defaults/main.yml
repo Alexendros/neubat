@@ -1,0 +1,19 @@
+---
+# NEUBAT role defaults
+neubat_username: neubat
+neubat_password: "$y$j9T$0KqE8..."   # Placeholder; always override.
+neubat_hostname: neubat
+neubat_profile: production
+neubat_desktop: none
+neubat_packages: []
+neubat_services:
+  - NetworkManager
+  - sshd
+
+neubat_portal_src: "{{ playbook_dir }}/../../portal"
+neubat_portal_dest: /opt/neubat-portal
+neubat_portal_user: "{{ neubat_username }}"
+neubat_portal_port: 3000
+
+neubat_enable_firewall: false
+neubat_enable_automatic_updates: false

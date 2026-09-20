@@ -76,7 +76,8 @@ install_base_system() {
         reflector \
         neovim nano \
         terminus-font \
-        openssh
+        openssh \
+        ansible
 
     # fstab
     log "Generando fstab..."
