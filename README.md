@@ -164,7 +164,7 @@ Accede a `http://localhost:3000/admin` e introduce el token.
 
 ## Captura del portal
 
-![Hero del portal NEUBAT](docs/assets/neubat-hero.png)
+![Hero del portal NEUBAT](docs/assets/hero.png)
 
 ## Seguridad
 
