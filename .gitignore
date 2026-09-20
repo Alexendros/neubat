@@ -13,3 +13,4 @@ portal/configs/generated/
 *.tmp
 .DS_Store
 out/
+portal/coverage/

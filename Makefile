@@ -1,5 +1,5 @@
 # NEUBAT - Makefile
-.PHONY: portal install-deps validate lint test test-vm build-iso release
+.PHONY: portal install-deps validate lint test test-smoke test-vm test-bash build-iso release
 
 install-deps:
 	cd portal && npm install
@@ -19,7 +19,10 @@ validate:
 lint:
 	@command -v shellcheck >/dev/null && shellcheck scripts/*.sh || echo "shellcheck no instalado; omitido"
 
-test: validate
+test:
+	cd portal && npm test
+
+test-smoke: validate
 	@cd portal && PORT=3100 timeout 8 node server.js & \
 	sleep 2; \
 	curl -sf http://localhost:3100/api/health && echo "OK /api/health"; \
@@ -30,6 +33,9 @@ test: validate
 # Prueba end-to-end en VM QEMU/NVMe (larga: ~40 min). Ver tests/vm/README.md
 test-vm:
 	python3 tests/vm/neubat_vm_test.py
+
+test-bash:
+	@echo "Ejecuta: bats tests/bash/*.bats"
 
 # Construir ISO híbrida con autoinstalación (requiere Docker)
 build-iso:

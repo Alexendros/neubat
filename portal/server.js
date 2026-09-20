@@ -60,7 +60,8 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-db.initStorage().then(() => {
+async function start() {
+    await db.initStorage();
     app.listen(PORT, () => {
         console.log(`
     ╔══════════════════════════════════════════════════════════════╗
@@ -72,7 +73,14 @@ db.initStorage().then(() => {
     ╚══════════════════════════════════════════════════════════════╝
         `);
     });
-}).catch(err => {
-    console.error('No se pudo inicializar el almacenamiento:', err);
-    process.exit(1);
-});
+}
+
+if (require.main === module) {
+    start().catch(err => {
+        console.error('No se pudo inicializar el almacenamiento:', err);
+        process.exit(1);
+    });
+}
+
+module.exports = app;
+
