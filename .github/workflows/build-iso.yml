@@ -1,0 +1,46 @@
+name: Build ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag de la release (ej. 1.0.0)'
+        required: true
+        default: '1.0.0'
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ISO
+        run: |
+          TAG="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          # Eliminar prefijo 'v' si existe para el nombre del artefacto
+          TAG="${TAG#v}"
+          make build-iso TAG="${TAG}"
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neubat-iso
+          path: out/*.iso
+          retention-days: 7
+
+      - name: Create GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*.iso
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
