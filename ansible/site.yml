@@ -1,0 +1,11 @@
+---
+- name: Post-instalación NEUBAT
+  hosts: localhost
+  gather_facts: true
+  pre_tasks:
+    - name: Cargar variables generadas desde el instalador
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/generated/neubat-ansible-vars.yml"
+      failed_when: false
+  roles:
+    - role: neubat

@@ -1,0 +1,16 @@
+[Unit]
+Description=NEUBAT Portal Local
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ neubat_portal_user }}
+WorkingDirectory={{ neubat_portal_dest }}
+ExecStart=/usr/bin/node server.js
+Restart=always
+Environment=NODE_ENV=production
+Environment=PORT={{ neubat_portal_port }}
+
+[Install]
+WantedBy=multi-user.target

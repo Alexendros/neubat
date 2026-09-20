@@ -6,6 +6,9 @@ npm-debug.log*
 portal/data/
 portal/configs/generated/
 
+# Variables Ansible generadas en runtime
+ansible/generated/
+
 # Logs
 *.log
 

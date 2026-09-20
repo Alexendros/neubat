@@ -1,5 +1,5 @@
 # NEUBAT - Makefile
-.PHONY: portal install-deps validate lint test test-smoke test-vm test-bash build-iso release
+.PHONY: portal install-deps validate lint test test-smoke test-vm test-bash test-ansible validate-ansible lint-ansible build-iso release
 
 install-deps:
 	cd portal && npm install
@@ -36,6 +36,15 @@ test-vm:
 
 test-bash:
 	@command -v bats >/dev/null 2>&1 && bats tests/bash/*.bats || echo "bats no instalado; omitido"
+
+validate-ansible:
+	@python3 -m json.tool configs/base.json > /dev/null && echo "OK ansible/inventory/local.yml"
+	@command -v ansible-playbook >/dev/null 2>&1 && cd ansible && ansible-playbook --syntax-check site.yml && echo "OK ansible/site.yml syntax" || echo "ansible-playbook no instalado; omitido"
+
+lint-ansible:
+	@command -v ansible-lint >/dev/null 2>&1 && ansible-lint ansible/ || echo "ansible-lint no instalado; omitido"
+
+test-ansible: validate-ansible lint-ansible
 
 # Construir ISO híbrida con autoinstalación (requiere Docker)
 build-iso:

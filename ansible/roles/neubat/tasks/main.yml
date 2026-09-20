@@ -1,0 +1,85 @@
+---
+- name: Asegurar que el usuario NEUBAT existe
+  ansible.builtin.user:
+    name: "{{ neubat_username }}"
+    shell: /bin/bash
+    groups: wheel,docker
+    append: true
+    state: present
+  become: true
+
+- name: Instalar paquetes declarados en el perfil
+  community.general.pacman:
+    name: "{{ neubat_packages }}"
+    state: present
+    update_cache: true
+  become: true
+  when: neubat_packages | length > 0
+
+- name: Habilitar servicios declarados
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  become: true
+  loop: "{{ neubat_services }}"
+
+- name: Crear directorio del portal
+  ansible.builtin.file:
+    path: "{{ neubat_portal_dest }}"
+    state: directory
+    owner: "{{ neubat_portal_user }}"
+    group: "{{ neubat_portal_user }}"
+    mode: '0755'
+  become: true
+
+- name: Sincronizar archivos del portal
+  ansible.builtin.copy:
+    src: "{{ neubat_portal_src }}/{{ item }}"
+    dest: "{{ neubat_portal_dest }}/{{ item }}"
+    owner: "{{ neubat_portal_user }}"
+    group: "{{ neubat_portal_user }}"
+    mode: '0644'
+  become: true
+  loop:
+    - server.js
+    - package.json
+    - lib
+    - routes
+    - public
+
+- name: Instalar dependencias del portal
+  ansible.builtin.command:
+    cmd: npm install --omit=dev
+    chdir: "{{ neubat_portal_dest }}"
+  become: true
+  become_user: "{{ neubat_portal_user }}"
+  changed_when: true
+
+- name: Desplegar servicio systemd del portal
+  ansible.builtin.template:
+    src: neubat-portal.service.j2
+    dest: /etc/systemd/system/neubat-portal.service
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: Recargar systemd
+
+- name: Habilitar e iniciar el portal NEUBAT
+  ansible.builtin.systemd:
+    name: neubat-portal
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+
+- name: Generar URL de setup
+  ansible.builtin.shell: |
+    set -o pipefail
+    machine_id=$(cat /etc/machine-id | cut -c1-8)
+    echo "http://{{ neubat_hostname }}.local:{{ neubat_portal_port }}/setup/${machine_id}" \
+      > "/home/{{ neubat_username }}/NEUBAT-URL.txt"
+    chown "{{ neubat_username }}:{{ neubat_username }}" "/home/{{ neubat_username }}/NEUBAT-URL.txt"
+  become: true
+  changed_when: true

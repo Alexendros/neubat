@@ -61,6 +61,7 @@ source "${NEUBAT_ROOT}/scripts/10-partition.sh"      # partition_disk
 source "${NEUBAT_ROOT}/scripts/20-archinstall.sh"    # fetch_configuration, install_base_system
 source "${NEUBAT_ROOT}/scripts/30-postinstall.sh"    # configure_system, install_applications
 source "${NEUBAT_ROOT}/scripts/40-portal-deploy.sh"  # deploy_local_portal
+source "${NEUBAT_ROOT}/scripts/50-firstboot-ansible.sh"  # prepare_ansible_firstboot
 
 # -----------------------------------------------------------------------------
 # FASE 6: LIMPIEZA Y FINALIZACIÓN
@@ -117,6 +118,7 @@ main() {
     configure_system
     install_applications
     deploy_local_portal
+    prepare_ansible_firstboot
     finalize_installation
 }
 
