@@ -21,7 +21,7 @@ export PACMAN_TIMEOUT=180
 
 WORK_DIR="$(mktemp -d -t neubat-work-XXXXXX)"
 PROFILE_DIR="$(mktemp -d -t neubat-profile-XXXXXX)"
-trap "rm -rf ${WORK_DIR} ${PROFILE_DIR}" EXIT
+trap 'rm -rf "${WORK_DIR}" "${PROFILE_DIR}"' EXIT
 
 echo "[build-iso] Copiando perfil releng ..."
 cp -a /usr/share/archiso/configs/releng/. "${PROFILE_DIR}/"
@@ -57,9 +57,8 @@ echo "[build-iso] Ejecutando mkarchiso (puede tardar varios minutos) ..."
 mkarchiso -v -w "${WORK_DIR}" "${PROFILE_DIR}" "/out/${ISO_NAME}"
 
 # mkarchiso ignora el nombre solicitado y usa image_name de profiledef.sh.
-GENERATED_ISO="/out/archlinux-*.iso"
-if compgen -G "${GENERATED_ISO}" >/dev/null; then
-    mv ${GENERATED_ISO} "/out/${ISO_NAME}"
-fi
+for generated in /out/archlinux-*.iso; do
+    [ -e "${generated}" ] && mv "${generated}" "/out/${ISO_NAME}"
+done
 
 echo "[build-iso] ISO generada: /out/${ISO_NAME}"
