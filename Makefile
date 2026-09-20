@@ -1,4 +1,6 @@
 # NEUBAT - Makefile
+TAG ?= 1.0.0
+
 .PHONY: portal install-deps validate lint test test-smoke test-vm test-bash test-ansible validate-ansible lint-ansible build-iso release
 
 install-deps:
@@ -48,11 +50,11 @@ test-ansible: validate-ansible lint-ansible
 
 # Construir ISO híbrida con autoinstalación (requiere Docker)
 build-iso:
-	bash scripts/build-iso.sh
+	bash scripts/build-iso.sh "$(TAG)"
 
 # Crear release v1.0.0 en GitHub adjuntando la ISO generada (requiere gh)
 release: build-iso
-	gh release create v1.0.0 out/neubat-1.0.0-x86_64.iso \
-		--title "NEUBAT v1.0.0" \
-		--notes-file docs/RELEASE-v1.0.0.md \
+	gh release create v$(TAG) out/neubat-$(TAG)-x86_64.iso \
+		--title "NEUBAT v$(TAG)" \
+		--notes-file docs/RELEASE-v$(TAG).md \
 		--repo Alexendros/neubat
