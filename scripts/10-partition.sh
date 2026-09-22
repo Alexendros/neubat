@@ -8,7 +8,33 @@
 #   p2  raíz   20-30 GiB btrfs   /
 #   p3  home   resto-4G  btrfs   /home
 #   p4  swap   4 GiB     swap
+#
+# Cuando encryption.enabled es true, p2/p3 se convierten a contenedores
+# LUKS y el sistema de archivos btrfs vive dentro de /dev/mapper/neubat_*.
 # =============================================================================
+
+# Crea (o reutiliza) un contenedor LUKS en la partición indicada y lo abre
+# con el mapper dado. El modo desatendido requiere un keyfile generado
+# previamente; si no existe, se usa passphrase interactiva.
+_setup_luks_container() {
+    local partition="$1" mapper="$2"
+    local cryptargs=(--type luks2 --cipher "${LUKS_CIPHER}" --key-size "${LUKS_KEY_SIZE}" --pbkdf argon2id --batch-mode)
+
+    log "Creando contenedor LUKS ${mapper} en ${partition}"
+
+    if [[ -n "${LUKS_KEYFILE:-}" && -f "${LUKS_KEYFILE}" ]]; then
+        cryptsetup luksFormat "${partition}" "${LUKS_KEYFILE}" "${cryptargs[@]}"
+        cryptsetup open "${partition}" "${mapper}" --key-file "${LUKS_KEYFILE}"
+    else
+        if [[ -z "${LUKS_PASSPHRASE:-}" ]]; then
+            error "Cifrado activo pero no hay keyfile ni passphrase configurada"
+        fi
+        # shellcheck disable=SC2086
+        printf '%s' "${LUKS_PASSPHRASE}" | cryptsetup luksFormat "${partition}" - "${cryptargs[@]}"
+        # shellcheck disable=SC2086
+        printf '%s' "${LUKS_PASSPHRASE}" | cryptsetup open "${partition}" "${mapper}" -
+    fi
+}
 
 partition_disk() {
     log "Iniciando particionado de ${DISK}..."
@@ -30,6 +56,9 @@ partition_disk() {
     p_root=$(part_name "${DISK}" 2)
     p_home=$(part_name "${DISK}" 3)
     p_swap=$(part_name "${DISK}" 4)
+
+    # Dispositivos que finalmente se formatearán/montarán (pueden ser mappers)
+    local fs_root="${p_root}" fs_home="${p_home}"
 
     # Tamaños (en GiB) calculados con awk (bc no está garantizado en el ISO)
     local disk_gib swap_gib=4 root_gib home_end_gib
@@ -78,20 +107,35 @@ partition_disk() {
     partprobe "${DISK}" || true
     sleep 2
 
+    # Cifrado opcional de raíz y home
+    if [[ "${ENCRYPTION_ENABLED:-false}" == "true" ]]; then
+        if ! command -v cryptsetup &>/dev/null; then
+            error "cryptsetup no está disponible en el entorno live; necesario para LUKS"
+        fi
+
+        _setup_luks_container "${p_root}" "neubat_root"
+        _setup_luks_container "${p_home}" "neubat_home"
+
+        fs_root="/dev/mapper/neubat_root"
+        fs_home="/dev/mapper/neubat_home"
+
+        success "Contenedores LUKS abiertos"
+    fi
+
     # Formateo
     log "Formateando particiones..."
     mkfs.fat -F32 "${p_efi}"
-    mkfs.btrfs -f -L "neubat_root" "${p_root}"
-    mkfs.btrfs -f -L "neubat_home" "${p_home}"
+    mkfs.btrfs -f -L "neubat_root" "${fs_root}"
+    mkfs.btrfs -f -L "neubat_home" "${fs_home}"
     mkswap "${p_swap}"
     swapon "${p_swap}"
 
     # Montaje con opciones optimizadas para SSD
     log "Montando particiones..."
-    mount -o noatime,compress=zstd,space_cache=v2 "${p_root}" /mnt
+    mount -o noatime,compress=zstd,space_cache=v2 "${fs_root}" /mnt
     mkdir -p /mnt/boot/efi /mnt/home
     mount "${p_efi}" /mnt/boot/efi
-    mount -o noatime,compress=zstd,space_cache=v2 "${p_home}" /mnt/home
+    mount -o noatime,compress=zstd,space_cache=v2 "${fs_home}" /mnt/home
 
     success "Particionado completado"
 }

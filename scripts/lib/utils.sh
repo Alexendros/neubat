@@ -30,3 +30,30 @@ else:
     print(val)
 PYEOF
 }
+
+# Lectura de claves anidadas (objetos dentro de objetos).
+# Soporta separadores '/' o '.'. Ejemplo: cfg_get_nested cfg.json encryption/enabled false
+# Uso: cfg_get_nested <archivo> <ruta> [valor_por_defecto]
+cfg_get_nested() {
+    python3 - "$1" "$2" "${3:-}" <<'PYEOF'
+import json, sys
+with open(sys.argv[1]) as f:
+    cfg = json.load(f)
+path = sys.argv[2].replace('/', '.').split('.')
+default = sys.argv[3]
+val = cfg
+for key in path:
+    if not isinstance(val, dict) or key not in val:
+        print(default)
+        sys.exit(0)
+    val = val[key]
+if val is None:
+    print(default)
+elif isinstance(val, bool):
+    print("true" if val else "false")
+elif isinstance(val, list):
+    print(' '.join(str(v) for v in val))
+else:
+    print(val)
+PYEOF
+}

@@ -4,11 +4,73 @@
 # Módulo cargado por neubat-install.sh (no ejecutar directamente)
 # =============================================================================
 
+# Configura crypttab, mkinitcpio y GRUB para el arranque con LUKS.
+# Debe ejecutarse antes del chroot para que mkinitcpio -P genere un
+# initramfs capaz de abrir los contenedores.
+configure_luks() {
+    [[ "${ENCRYPTION_ENABLED:-false}" != "true" ]] && return 0
+
+    log "Configurando cifrado LUKS para el arranque..."
+
+    local p_root p_home root_uuid home_uuid
+    p_root=$(part_name "${DISK}" 2)
+    p_home=$(part_name "${DISK}" 3)
+    root_uuid=$(blkid -s UUID -o value "${p_root}")
+    home_uuid=$(blkid -s UUID -o value "${p_home}")
+
+    if [[ -z "${root_uuid}" || -z "${home_uuid}" ]]; then
+        error "No se pudo obtener el UUID de las particiones cifradas"
+    fi
+
+    local keyfile_path=""
+    if [[ "${ENCRYPTION_METHOD}" == "keyfile" ]]; then
+        if [[ -z "${LUKS_KEYFILE:-}" || ! -f "${LUKS_KEYFILE}" ]]; then
+            error "Método keyfile seleccionado pero no existe LUKS_KEYFILE"
+        fi
+        cp "${LUKS_KEYFILE}" /mnt/boot/luks-keyfile
+        chmod 0400 /mnt/boot/luks-keyfile
+        keyfile_path="/boot/luks-keyfile"
+        log "Keyfile LUKS copiado a /boot/luks-keyfile"
+    fi
+
+    # crypttab: systemd-cryptsetup abrirá home tras el initramfs;
+    # neubat_root debe abrirse en el initramfs vía el hook encrypt.
+    {
+        if [[ -n "${keyfile_path}" ]]; then
+            printf "neubat_root UUID=%s %s luks\n" "${root_uuid}" "${keyfile_path}"
+            printf "neubat_home UUID=%s %s luks\n" "${home_uuid}" "${keyfile_path}"
+        else
+            printf "neubat_root UUID=%s none luks\n" "${root_uuid}"
+            printf "neubat_home UUID=%s none luks\n" "${home_uuid}"
+        fi
+    } > /mnt/etc/crypttab
+    chmod 0600 /mnt/etc/crypttab
+
+    # Añadir hook encrypt antes de filesystems en mkinitcpio.conf
+    if [[ -f /mnt/etc/mkinitcpio.conf ]]; then
+        if grep -q 'HOOKS=.*filesystems' /mnt/etc/mkinitcpio.conf; then
+            sed -i 's/\(filesystems\)/encrypt \1/' /mnt/etc/mkinitcpio.conf
+        else
+            warning "No se encontró 'filesystems' en HOOKS; añade 'encrypt' manualmente a mkinitcpio.conf"
+        fi
+    fi
+
+    # GRUB: indicar al hook encrypt qué dispositivo abrir
+    if [[ -f /mnt/etc/default/grub ]]; then
+        sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=\"|GRUB_CMDLINE_LINUX_DEFAULT=\"cryptdevice=UUID=${root_uuid}:neubat_root |" /mnt/etc/default/grub
+    fi
+
+    success "Configuración LUKS preparada"
+}
+
 configure_system() {
     log "Configurando sistema en chroot..."
 
     # La configuración viaja al chroot para trazabilidad (se borra al finalizar)
     cp "${NEUBAT_CONFIG_FILE}" /mnt/root/neubat-config.json
+
+    # Preparar LUKS antes de entrar al chroot para que mkinitcpio lo vea
+    configure_luks
 
     # NOTA: el heredoc usa EOF sin comillas a propósito: las variables
     # (HOSTNAME, USERNAME, etc.) se expanden en el entorno live antes de
@@ -31,6 +93,7 @@ NEUBAT_VERSION=${NEUBAT_VERSION}
 NEUBAT_PROFILE=${NEUBAT_PROFILE}
 NEUBAT_TOKEN=${NEUBAT_TOKEN}
 NEUBAT_INSTALL_DATE=$(date -Iseconds)
+NEUBAT_ENCRYPTED=${ENCRYPTION_ENABLED:-false}
 REL
 
 # Hostname
@@ -51,7 +114,7 @@ echo "root:${PASSWORD}" | chpasswd
 echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/neubat
 chmod 440 /etc/sudoers.d/neubat
 
-# Initramfs
+# Initramfs (ya preparado con hooks/crypttab si LUKS está activo)
 mkinitcpio -P
 
 # GRUB (UEFI)

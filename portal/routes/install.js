@@ -18,7 +18,15 @@ const BOOT_BASE_URL = process.env.NEUBAT_MIRROR_BASE || 'https://geo.mirror.pkgb
 // POST /api/install — crear nueva instalación
 router.post('/install', async (req, res) => {
     try {
-        const { profile = 'production', hostname, username, desktop, packages = [] } = req.body;
+        const {
+            profile = 'production',
+            hostname,
+            username,
+            password,
+            desktop,
+            packages = [],
+            encryption
+        } = req.body;
 
         const token = db.generateToken();
         const machineId = db.generateMachineId();
@@ -36,11 +44,19 @@ router.post('/install', async (req, res) => {
             machine_id: machineId,
             hostname: hostname || `${baseProfile.hostname}-${machineId}`,
             username: username || baseProfile.username,
+            password: password || baseProfile.password,
             desktop: desktop || baseProfile.desktop,
             packages: [...new Set([...(baseProfile.packages || []), ...packages])],
             created_at: new Date().toISOString(),
             status: 'pending'
         };
+
+        if (encryption && typeof encryption === 'object') {
+            config.encryption = {
+                ...(baseProfile.encryption || {}),
+                ...encryption
+            };
+        }
 
         const configPath = db.configPathFor(token);
         await fs.writeFile(configPath, JSON.stringify(config, null, 2));

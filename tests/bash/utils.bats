@@ -16,7 +16,12 @@ setup() {
   "username": "tester",
   "packages": ["docker", "nodejs", "npm"],
   "desktop": "none",
-  "missing": null
+  "missing": null,
+  "encryption": {
+    "enabled": true,
+    "method": "keyfile",
+    "passphrase": "secret"
+  }
 }
 JSON
 }
@@ -54,4 +59,19 @@ teardown() {
 
 @test "cfg_get devuelve valor por defecto cuando el valor es null" {
     [ "$(cfg_get "${TMP_CONFIG}" missing "default")" = "default" ]
+}
+
+@test "cfg_get_nested lee valores booleanos anidados" {
+    [ "$(cfg_get_nested "${TMP_CONFIG}" encryption/enabled "false")" = "true" ]
+    [ "$(cfg_get_nested "${TMP_CONFIG}" encryption.enabled "false")" = "true" ]
+}
+
+@test "cfg_get_nested lee cadenas anidadas" {
+    [ "$(cfg_get_nested "${TMP_CONFIG}" encryption/method)" = "keyfile" ]
+    [ "$(cfg_get_nested "${TMP_CONFIG}" encryption/passphrase)" = "secret" ]
+}
+
+@test "cfg_get_nested devuelve valor por defecto en rutas inexistentes" {
+    [ "$(cfg_get_nested "${TMP_CONFIG}" encryption/nonexistent "fallback")" = "fallback" ]
+    [ "$(cfg_get_nested "${TMP_CONFIG}" no/such/path "fallback")" = "fallback" ]
 }
