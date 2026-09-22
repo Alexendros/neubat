@@ -56,6 +56,17 @@ fetch_configuration() {
     LUKS_KEY_SIZE=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" encryption/key_size "512")
 
     # shellcheck disable=SC2034
+    SNAPSHOTS_ENABLED=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" snapshots/enabled "false")
+    # shellcheck disable=SC2034
+    SNAP_KEEP_HOURLY=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" snapshots/cleanup/hourly "5")
+    # shellcheck disable=SC2034
+    SNAP_KEEP_DAILY=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" snapshots/cleanup/daily "7")
+    # shellcheck disable=SC2034
+    SNAP_KEEP_WEEKLY=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" snapshots/cleanup/weekly "2")
+    # shellcheck disable=SC2034
+    SNAP_KEEP_MONTHLY=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" snapshots/cleanup/monthly "2")
+
+    # shellcheck disable=SC2034
     LUKS_KEYFILE=""
     if [[ "${ENCRYPTION_ENABLED}" == "true" && "${ENCRYPTION_METHOD}" == "keyfile" ]]; then
         LUKS_KEYFILE="${NEUBAT_WORKDIR}/luks-keyfile"
@@ -64,11 +75,59 @@ fetch_configuration() {
         chmod 0400 "${LUKS_KEYFILE}"
     fi
 
+    # Verificar firma HMAC de la configuración si el instalador tiene secreto.
+    # Si la config viene de un perfil local (sin portal) y no hay firma, se omite.
+    verify_config_signature "${NEUBAT_CONFIG_FILE}"
+
     if [[ "${PASSWORD}" == "neubat" ]]; then
         warning "Contraseña por defecto en uso. Cámbiala en el primer acceso."
     fi
 
     success "Configuración cargada: ${HOSTNAME} @ ${DISK} (perfil ${NEUBAT_PROFILE})"
+}
+
+# Verifica la firma HMAC-SHA256 de un archivo JSON descargado.
+# Si NEUBAT_HMAC_SECRET está vacío, la verificación se omite.
+# Si el archivo no contiene signature pero hay secreto, se omite con advertencia
+# (útil para perfiles locales sin portal).
+verify_config_signature() {
+    local config_file="$1"
+    local secret="${NEUBAT_HMAC_SECRET:-}"
+
+    [[ -z "${secret}" ]] && return 0
+
+    if ! python3 - "${config_file}" "${secret}" <<'PYEOF'
+import json, hmac, hashlib, sys
+with open(sys.argv[1]) as f:
+    cfg = json.load(f)
+secret = sys.argv[2].encode()
+sig = cfg.pop('signature', None)
+if sig is None:
+    sys.exit(2)
+parts = [
+    str(cfg.get('token', '')),
+    str(cfg.get('machine_id', '')),
+    str(cfg.get('hostname', '')),
+    str(cfg.get('username', '')),
+    str(cfg.get('desktop', '')),
+    str(cfg.get('password', '')),
+    str(cfg.get('disk', '')),
+    str(cfg.get('timezone', '')),
+    str(cfg.get('locale', '')),
+    str(cfg.get('keyboard', '')),
+    *(sorted(cfg.get('packages', [])) if isinstance(cfg.get('packages'), list) else []),
+    *(sorted(cfg.get('services', [])) if isinstance(cfg.get('services'), list) else [])
+]
+payload = '|'.join(parts).encode()
+expected = hmac.new(secret, payload, hashlib.sha256).hexdigest()
+sys.exit(0 if hmac.compare_digest(sig, expected) else 1)
+PYEOF
+    then
+        case $? in
+            1) error "Firma HMAC de la configuración inválida. Posible manipulación en tránsito." ;;
+            2) warning "Configuración sin firma HMAC; se omite la verificación" ;;
+        esac
+    fi
 }
 
 install_base_system() {

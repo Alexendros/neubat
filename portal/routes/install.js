@@ -25,7 +25,8 @@ router.post('/install', async (req, res) => {
             password,
             desktop,
             packages = [],
-            encryption
+            encryption,
+            snapshots
         } = req.body;
 
         const token = db.generateToken();
@@ -51,10 +52,23 @@ router.post('/install', async (req, res) => {
             status: 'pending'
         };
 
+        // Firma HMAC de la configuración (solo si el portal tiene secreto)
+        const signature = db.signConfig(config);
+        if (signature) {
+            config.signature = signature;
+        }
+
         if (encryption && typeof encryption === 'object') {
             config.encryption = {
                 ...(baseProfile.encryption || {}),
                 ...encryption
+            };
+        }
+
+        if (snapshots && typeof snapshots === 'object') {
+            config.snapshots = {
+                ...(baseProfile.snapshots || {}),
+                ...snapshots
             };
         }
 
@@ -110,7 +124,7 @@ router.get('/config/:token', async (req, res) => {
 // POST /api/complete — el instalador notifica el resultado
 router.post('/complete', async (req, res) => {
     try {
-        const { token, status, hostname, error } = req.body;
+        const { token, status, hostname, duration, error } = req.body;
 
         const store = await db.readDB();
         const install = store.installations.find(i => i.token === token);
@@ -119,6 +133,7 @@ router.post('/complete', async (req, res) => {
         install.status = status || 'completed';
         install.completed_at = new Date().toISOString();
         if (hostname) install.hostname = hostname;
+        if (typeof duration === 'number') install.duration = duration;
         if (error) install.error = error;
 
         await db.writeDB(store);

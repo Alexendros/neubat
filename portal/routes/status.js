@@ -35,4 +35,34 @@ router.get('/installations/:token', async (req, res) => {
     }
 });
 
+// GET /api/metrics — métricas agregadas de instalaciones
+router.get('/metrics', async (req, res) => {
+    try {
+        const store = await db.readDB();
+        const installs = store.installations || [];
+        const total = installs.length;
+        const completed = installs.filter(i => i.status === 'completed').length;
+        const failed = installs.filter(i => i.status === 'failed').length;
+        const pending = installs.filter(i => i.status === 'pending' || i.status === 'downloaded').length;
+        const durations = installs
+            .filter(i => typeof i.duration === 'number' && i.duration > 0)
+            .map(i => i.duration);
+
+        const avgDuration = durations.length
+            ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+            : 0;
+
+        res.json({
+            total,
+            completed,
+            failed,
+            pending,
+            avg_duration_seconds: avgDuration,
+            duration_count: durations.length
+        });
+    } catch {
+        res.status(500).json({ error: 'Error interno' });
+    }
+});
+
 module.exports = router;

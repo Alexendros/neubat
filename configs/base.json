@@ -27,5 +27,14 @@
     "passphrase": "",
     "cipher": "aes-xts-plain64",
     "key_size": 512
+  },
+  "snapshots": {
+    "enabled": false,
+    "cleanup": {
+      "hourly": 5,
+      "daily": 7,
+      "weekly": 2,
+      "monthly": 2
+    }
   }
 }

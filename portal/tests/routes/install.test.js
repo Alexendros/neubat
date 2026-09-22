@@ -113,6 +113,32 @@ describe('routes/install', () => {
         expect(res.body.password).toBe('custom-password');
     });
 
+    test('POST /api/install acepta opciones de snapshots', async () => {
+        const create = await request(app)
+            .post('/api/install')
+            .send({
+                profile: 'base',
+                snapshots: { enabled: true, cleanup: { hourly: 10 } }
+            })
+            .expect(200);
+
+        const res = await request(app).get(create.body.config_url).expect(200);
+        expect(res.body.snapshots.enabled).toBe(true);
+        expect(res.body.snapshots.cleanup.hourly).toBe(10);
+    });
+
+    test('POST /api/install firma la configuración cuando hay HMAC_SECRET', async () => {
+        process.env.NEUBAT_HMAC_SECRET = 'test-secret';
+        const create = await request(app)
+            .post('/api/install')
+            .send({ profile: 'base', hostname: 'signed' })
+            .expect(200);
+
+        const res = await request(app).get(create.body.config_url).expect(200);
+        expect(res.body.signature).toMatch(/^[0-9a-f]{64}$/);
+        delete process.env.NEUBAT_HMAC_SECRET;
+    });
+
     test('GET /boot/:token inválido devuelve 404', async () => {
         await request(app).get('/boot/00000000000000000000000000000000').expect(404);
     });
