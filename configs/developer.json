@@ -17,13 +17,18 @@
     "go",
     "rust",
     "code",
+    "jetbrains-toolbox",
+    "postman-bin",
+    "insomnia",
     "github-cli",
+    "gitlab-runner",
     "kubectl",
     "helm",
     "minikube",
     "terraform",
     "ansible",
-    "git"
+    "git",
+    "okular"
   ],
   "services": [
     "NetworkManager",
@@ -32,5 +37,12 @@
   ],
   "timezone": "Europe/Madrid",
   "locale": "es_ES.UTF-8",
-  "keyboard": "es"
+  "keyboard": "es",
+  "encryption": {
+    "enabled": false,
+    "method": "keyfile",
+    "passphrase": "",
+    "cipher": "aes-xts-plain64",
+    "key_size": 512
+  }
 }

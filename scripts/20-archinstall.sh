@@ -44,6 +44,26 @@ fetch_configuration() {
     # shellcheck disable=SC2034
     KEYMAP=$(cfg_get "${NEUBAT_CONFIG_FILE}" keyboard "es")
 
+    # shellcheck disable=SC2034
+    ENCRYPTION_ENABLED=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" encryption/enabled "false")
+    # shellcheck disable=SC2034
+    ENCRYPTION_METHOD=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" encryption/method "keyfile")
+    # shellcheck disable=SC2034
+    LUKS_PASSPHRASE=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" encryption/passphrase "")
+    # shellcheck disable=SC2034
+    LUKS_CIPHER=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" encryption/cipher "aes-xts-plain64")
+    # shellcheck disable=SC2034
+    LUKS_KEY_SIZE=$(cfg_get_nested "${NEUBAT_CONFIG_FILE}" encryption/key_size "512")
+
+    # shellcheck disable=SC2034
+    LUKS_KEYFILE=""
+    if [[ "${ENCRYPTION_ENABLED}" == "true" && "${ENCRYPTION_METHOD}" == "keyfile" ]]; then
+        LUKS_KEYFILE="${NEUBAT_WORKDIR}/luks-keyfile"
+        log "Generando keyfile LUKS para arranque desatendido"
+        dd if=/dev/urandom of="${LUKS_KEYFILE}" bs=512 count=1 status=none
+        chmod 0400 "${LUKS_KEYFILE}"
+    fi
+
     if [[ "${PASSWORD}" == "neubat" ]]; then
         warning "Contraseña por defecto en uso. Cámbiala en el primer acceso."
     fi
@@ -65,9 +85,13 @@ install_base_system() {
 
     # Paquetes esenciales
     log "Instalando paquetes base (esto puede tardar)..."
+    # Paquetes base; cryptsetup es obligatorio si el perfil usa LUKS,
+    # y se instala siempre para simplificar la lógica y poder reutilizar
+    # el mismo ISO para instalaciones cifradas o no.
     pacstrap -K /mnt \
         base linux linux-firmware \
         btrfs-progs \
+        cryptsetup \
         grub efibootmgr \
         networkmanager network-manager-applet \
         sudo git base-devel \

@@ -65,7 +65,7 @@ Como servicio systemd, usar como plantilla la unidad que genera `scripts/40-port
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | `/api/install` | Crea instalación; body: `profile`, `hostname?`, `username?`, `desktop?`, `packages?[]` |
+| POST | `/api/install` | Crea instalación; body: `profile`, `hostname?`, `username?`, `password?`, `desktop?`, `packages?[]`, `encryption?` |
 | GET | `/api/config/:token` | Devuelve el JSON de configuración (consumido por el instalador) |
 | POST | `/api/complete` | El instalador notifica `status`, `hostname`, `error?` |
 | GET | `/api/installations` | Últimas 50 instalaciones |
@@ -163,6 +163,61 @@ bash scripts/neubat-install.sh <token> [perfil]
 | p4 (swap) | 4 GiB | swap | — |
 
 Los nombres de partición se resuelven con `part_name()` (soporta `/dev/sda1` y `/dev/nvme0n1p1`).
+
+## 6.1 Cifrado de disco LUKS (Fase 6)
+
+NEUBAT puede cifrar las particiones de **raíz** y **home** con LUKS2. La partición EFI (`/boot/efi`) permanece descifrada porque el firmware UEFI debe poder leer el cargador de arranque.
+
+### Modos de arranque
+
+| Método | Campo `encryption.method` | Comportamiento | Seguridad |
+|--------|---------------------------|----------------|-----------|
+| **Keyfile en `/boot`** | `keyfile` | Arranque completamente desatendido | Protege datos en reposo si el disco está apagado; no protege si roban el disco con la partición EFI |
+| **Passphrase manual** | `passphrase` | El initramfs pide la contraseña en cada arranque | Mayor seguridad física; rompe el despliegue zero-touch |
+
+### Configuración en el perfil
+
+```json
+{
+  "encryption": {
+    "enabled": true,
+    "method": "keyfile",
+    "passphrase": "cambiar-post-instalacion",
+    "cipher": "aes-xts-plain64",
+    "key_size": 512
+  }
+}
+```
+
+- `enabled`: activa/desactiva LUKS.
+- `method`: `keyfile` (desatendido) o `passphrase` (interactivo).
+- `passphrase`: se usa para formatear el contenedor cuando no hay keyfile; también puede usarse para añadir frases adicionales tras la instalación.
+- `cipher` / `key_size`: parámetros de `cryptsetup luksFormat` (defecto `aes-xts-plain64` / 512).
+
+### Desde la API
+
+```bash
+curl -X POST http://<portal>:3000/api/install \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "profile": "production",
+    "hostname": "mi-equipo",
+    "encryption": { "enabled": true, "method": "passphrase", "passphrase": "MiFraseSegura" }
+  }'
+```
+
+### Post-instalación recomendada
+
+Cuando uses `method: "keyfile"`, rota la llave tras el primer arranque:
+
+```bash
+# Añade una passphrase y elimina el keyfile del slot 0
+sudo cryptsetup luksAddKey /dev/nvme0n1p2
+sudo cryptsetup luksRemoveKey /dev/nvme0n1p2 /boot/luks-keyfile
+sudo rm /boot/luks-keyfile
+```
+
+Para TPM2 o FIDO2, consulta `systemd-cryptenroll` (fuera del alcance del MVP).
 
 ## 7. Perfiles de configuración
 

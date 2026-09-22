@@ -87,6 +87,32 @@ describe('routes/install', () => {
         expect(res.text).toContain(`neubat_token=${create.body.token}`);
     });
 
+    test('POST /api/install acepta opciones de cifrado', async () => {
+        const create = await request(app)
+            .post('/api/install')
+            .send({
+                profile: 'base',
+                hostname: 'test-encrypted',
+                encryption: { enabled: true, method: 'passphrase', passphrase: 'secreto' }
+            })
+            .expect(200);
+
+        const res = await request(app).get(create.body.config_url).expect(200);
+        expect(res.body.encryption.enabled).toBe(true);
+        expect(res.body.encryption.method).toBe('passphrase');
+        expect(res.body.encryption.passphrase).toBe('secreto');
+    });
+
+    test('POST /api/install permite sobreescribir contraseña', async () => {
+        const create = await request(app)
+            .post('/api/install')
+            .send({ profile: 'base', password: 'custom-password' })
+            .expect(200);
+
+        const res = await request(app).get(create.body.config_url).expect(200);
+        expect(res.body.password).toBe('custom-password');
+    });
+
     test('GET /boot/:token inválido devuelve 404', async () => {
         await request(app).get('/boot/00000000000000000000000000000000').expect(404);
     });
