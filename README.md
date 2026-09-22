@@ -25,6 +25,17 @@ Principios:
 | 2 | URL generada post-instalación | URL única funcional en < 5 min desde el arranque |
 | 3 | Instalación desatendida | 0 intervenciones tras la selección inicial |
 
+## Características principales
+
+- **Portal web responsive** (React + shadcn/ui) para crear instalaciones y obtener URLs únicas de arranque.
+- **Arranque por red (iPXE)** o **ISO híbrida autoinstalable** sin USB.
+- **Particionado automático** GPT/UEFI con btrfs, swap y soporte NVMe.
+- **Cifrado de disco LUKS2** opcional para `/` y `/home`, con arranque desatendido vía keyfile o passphrase interactivo.
+- **Snapshots btrfs automáticos** con snapper + snap-pac (pre/post actualizaciones de pacman).
+- **Firma HMAC-SHA256** de configuraciones para detectar manipulación en tránsito.
+- **Métricas de instalación** y panel de administración (`/admin`).
+- **Post-instalación con Ansible** (first-boot) y portal local en el sistema instalado.
+
 ## Estructura del repositorio
 
 ```
@@ -173,6 +184,8 @@ Accede a `http://localhost:3000/admin` e introduce el token.
 ## Seguridad
 
 - Las contraseñas iniciales son parametrizables vía JSON; el valor por defecto (`neubat`) **debe cambiarse en el primer acceso**.
+- **HMAC-SHA256**: configura `NEUBAT_HMAC_SECRET` en el portal y en el entorno live para firmar y verificar las configuraciones.
+- **LUKS2**: cifrado opcional de raíz y home; el método `keyfile` permite arranque desatendido y debe rotarse tras la instalación en entornos sensibles.
 - El portal aplica rate-limiting básico en `/api/*`. Para exposición pública, despliega detrás de un reverse proxy con TLS.
 
 ## Licencia
