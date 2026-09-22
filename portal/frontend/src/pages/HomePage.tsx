@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, Copy, Server, Terminal, Wifi } from 'lucide-react';
+import { CheckCircle, Copy, Server, Terminal, Wifi, Shield, History } from 'lucide-react';
 
 const statusColors: Record<Installation['status'], string> = {
   pending: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
@@ -29,6 +29,9 @@ export function HomePage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<InstallResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [enableEncryption, setEnableEncryption] = useState(true);
+  const [encryptionMethod, setEncryptionMethod] = useState<'keyfile' | 'passphrase'>('keyfile');
+  const [enableSnapshots, setEnableSnapshots] = useState(true);
 
   useEffect(() => {
     loadInstallations();
@@ -60,6 +63,13 @@ export function HomePage() {
         .split(/\s+/)
         .filter(Boolean),
     };
+
+    if (enableEncryption) {
+      body.encryption = { enabled: true, method: encryptionMethod };
+    }
+    if (enableSnapshots) {
+      body.snapshots = { enabled: true };
+    }
 
     try {
       const data = await api.install(body);
@@ -126,6 +136,72 @@ export function HomePage() {
                 <div className="space-y-2">
                   <Label htmlFor="packages">Paquetes adicionales</Label>
                   <Input id="packages" name="packages" placeholder="htop btop firefox" />
+                </div>
+              </div>
+
+              <div className="rounded-md border border-border bg-secondary/30 p-4 space-y-4">
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-cyan-400" />
+                  Opciones avanzadas
+                </h3>
+
+                <div className="flex items-start gap-3">
+                  <input
+                    id="enable-encryption"
+                    type="checkbox"
+                    checked={enableEncryption}
+                    onChange={(e) => setEnableEncryption(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-border bg-background text-cyan-400 focus:ring-cyan-400"
+                  />
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="enable-encryption" className="font-normal">
+                      Cifrar disco con LUKS2
+                    </Label>
+                    {enableEncryption && (
+                      <Select
+                        value={encryptionMethod}
+                        onValueChange={(v) => setEncryptionMethod(v as 'keyfile' | 'passphrase')}
+                      >
+                        <SelectTrigger className="w-full sm:w-64">
+                          <SelectValue placeholder="Método de arranque" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="keyfile">
+                            Keyfile en /boot (desatendido)
+                          </SelectItem>
+                          <SelectItem value="passphrase">
+                            Passphrase (más seguro, interactivo)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {enableEncryption
+                        ? encryptionMethod === 'keyfile'
+                          ? 'Arranque zero-touch. Cambia la llave tras la instalación para mayor seguridad física.'
+                          : 'El arranque pedirá la contraseña en cada reinicio. Rompe el despliegue desatendido.'
+                        : 'Las particiones raíz y home se formatearán sin cifrado.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <input
+                    id="enable-snapshots"
+                    type="checkbox"
+                    checked={enableSnapshots}
+                    onChange={(e) => setEnableSnapshots(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-border bg-background text-cyan-400 focus:ring-cyan-400"
+                  />
+                  <div>
+                    <Label htmlFor="enable-snapshots" className="font-normal flex items-center gap-2">
+                      <History className="h-3.5 w-3.5" />
+                      Snapshots btrfs automáticos
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Instala snapper + snap-pac para snapshots pre/post actualización y rollback.
+                    </p>
+                  </div>
                 </div>
               </div>
 

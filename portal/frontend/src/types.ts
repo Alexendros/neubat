@@ -16,6 +16,13 @@ export interface InstallRequest {
   username?: string;
   desktop?: string;
   packages?: string[];
+  encryption?: {
+    enabled: boolean;
+    method?: 'keyfile' | 'passphrase';
+  };
+  snapshots?: {
+    enabled: boolean;
+  };
 }
 
 export interface InstallResponse {

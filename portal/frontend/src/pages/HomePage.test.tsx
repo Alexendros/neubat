@@ -59,5 +59,12 @@ describe('HomePage', () => {
       expect(screen.getByText('URL de arranque iPXE')).toBeInTheDocument();
       expect(screen.getByText(/boot\/tokentest/i)).toBeInTheDocument();
     });
+
+    // Verifica que el POST incluye encryption y snapshots por defecto
+    const calls = (globalThis.fetch as any).mock.calls;
+    const postCall = calls.find((c: any[]) => c[1]?.method === 'POST');
+    const body = JSON.parse(postCall[1].body);
+    expect(body.encryption).toEqual({ enabled: true, method: 'keyfile' });
+    expect(body.snapshots).toEqual({ enabled: true });
   });
 });
