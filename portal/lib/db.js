@@ -54,6 +54,40 @@ function configPathFor(token) {
     return path.join(CONFIG_DIR, `${token}.json`);
 }
 
+// Carga el secreto HMAC desde el entorno. Si no está definido, la firma
+// queda deshabilitada (modo desarrollo o despliegues sin verificación).
+function hmacSecret() {
+    return process.env.NEUBAT_HMAC_SECRET || '';
+}
+
+// Payload determinista usado para la firma. Debe coincidir exactamente con
+// la reconstrucción que hace el instalador en scripts/20-archinstall.sh.
+function signingPayload(config) {
+    const parts = [
+        String(config.token || ''),
+        String(config.machine_id || ''),
+        String(config.hostname || ''),
+        String(config.username || ''),
+        String(config.desktop || ''),
+        String(config.password || ''),
+        String(config.disk || ''),
+        String(config.timezone || ''),
+        String(config.locale || ''),
+        String(config.keyboard || ''),
+        ...(Array.isArray(config.packages) ? config.packages.sort() : []),
+        ...(Array.isArray(config.services) ? config.services.sort() : [])
+    ];
+    return parts.join('|');
+}
+
+function signConfig(config) {
+    const secret = hmacSecret();
+    if (!secret) return null;
+    return crypto.createHmac('sha256', secret)
+        .update(signingPayload(config))
+        .digest('hex');
+}
+
 module.exports = {
     PORTAL_ROOT,
     CONFIG_DIR,
@@ -64,5 +98,8 @@ module.exports = {
     readDB,
     writeDB,
     loadProfile,
-    configPathFor
+    configPathFor,
+    hmacSecret,
+    signingPayload,
+    signConfig
 };

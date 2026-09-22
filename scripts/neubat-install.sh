@@ -60,6 +60,7 @@ source "${NEUBAT_ROOT}/scripts/00-preinstall.sh"     # check_requirements
 source "${NEUBAT_ROOT}/scripts/10-partition.sh"      # partition_disk
 source "${NEUBAT_ROOT}/scripts/20-archinstall.sh"    # fetch_configuration, install_base_system
 source "${NEUBAT_ROOT}/scripts/30-postinstall.sh"    # configure_system, install_applications
+source "${NEUBAT_ROOT}/scripts/35-snapper.sh"        # configure_snapper
 source "${NEUBAT_ROOT}/scripts/40-portal-deploy.sh"  # deploy_local_portal
 source "${NEUBAT_ROOT}/scripts/50-firstboot-ansible.sh"  # prepare_ansible_firstboot
 
@@ -70,13 +71,19 @@ source "${NEUBAT_ROOT}/scripts/50-firstboot-ansible.sh"  # prepare_ansible_first
 finalize_installation() {
     log "Finalizando instalación..."
 
+    # Calcular duración de la instalación para métricas
+    local duration=0
+    if [[ -n "${NEUBAT_START_TIME:-}" ]]; then
+        duration=$(($(date +%s) - NEUBAT_START_TIME))
+    fi
+
     # Limpiar archivos temporales
     rm -f /mnt/root/neubat-config.json
 
     # Notificar al portal central (si existe conectividad)
     curl -sf -X POST "${NEUBAT_PORTAL_URL}/api/complete" \
          -H "Content-Type: application/json" \
-         -d "{\"token\":\"${NEUBAT_TOKEN}\",\"status\":\"completed\",\"hostname\":\"${HOSTNAME}\"}" \
+         -d "{\"token\":\"${NEUBAT_TOKEN}\",\"status\":\"completed\",\"hostname\":\"${HOSTNAME}\",\"duration\":${duration}}" \
          || warning "No se pudo notificar al portal central"
 
     echo ""
@@ -111,12 +118,15 @@ main() {
     echo "═══════════════════════════════════════════════════════════════"
     echo ""
 
+    NEUBAT_START_TIME=$(date +%s)
+
     check_requirements
     fetch_configuration
     partition_disk
     install_base_system
     configure_system
     install_applications
+    configure_snapper
     deploy_local_portal
     prepare_ansible_firstboot
     finalize_installation

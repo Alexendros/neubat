@@ -21,6 +21,13 @@ setup() {
     "enabled": true,
     "method": "keyfile",
     "passphrase": "secret"
+  },
+  "snapshots": {
+    "enabled": false,
+    "cleanup": {
+      "hourly": 5,
+      "daily": 7
+    }
   }
 }
 JSON
@@ -74,4 +81,9 @@ teardown() {
 @test "cfg_get_nested devuelve valor por defecto en rutas inexistentes" {
     [ "$(cfg_get_nested "${TMP_CONFIG}" encryption/nonexistent "fallback")" = "fallback" ]
     [ "$(cfg_get_nested "${TMP_CONFIG}" no/such/path "fallback")" = "fallback" ]
+}
+
+@test "cfg_get_nested lee rutas de tres niveles" {
+    [ "$(cfg_get_nested "${TMP_CONFIG}" snapshots/cleanup/hourly "0")" = "5" ]
+    [ "$(cfg_get_nested "${TMP_CONFIG}" snapshots.cleanup.daily "0")" = "7" ]
 }

@@ -42,4 +42,20 @@ describe('routes/status', () => {
             .get('/api/installations/00000000000000000000000000000000')
             .expect(404);
     });
+
+    test('GET /api/metrics devuelve métricas agregadas', async () => {
+        const create = await request(app)
+            .post('/api/install')
+            .send({ profile: 'base' });
+
+        await request(app)
+            .post('/api/complete')
+            .send({ token: create.body.token, status: 'completed', duration: 120 })
+            .expect(200);
+
+        const res = await request(app).get('/api/metrics').expect(200);
+        expect(res.body.total).toBeGreaterThanOrEqual(1);
+        expect(res.body.completed).toBeGreaterThanOrEqual(1);
+        expect(res.body.avg_duration_seconds).toBe(120);
+    });
 });

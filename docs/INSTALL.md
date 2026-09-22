@@ -49,6 +49,7 @@ Variables de entorno útiles:
 | `ADMIN_TOKEN` | Token para el panel `/admin` | — (panel deshabilitado si falta) |
 | `NEUBAT_MIRROR_BASE` | Mirror base para el netboot iPXE | `https://geo.mirror.pkgbuild.com/iso/latest` |
 | `NEUBAT_PORT` | Puerto expuesto del portal | `3000` |
+| `NEUBAT_HMAC_SECRET` | Secreto compartido para firma HMAC de configuraciones | — |
 
 ### Node.js nativo
 
@@ -67,7 +68,8 @@ Como servicio systemd, usar como plantilla la unidad que genera `scripts/40-port
 |--------|------|-------------|
 | POST | `/api/install` | Crea instalación; body: `profile`, `hostname?`, `username?`, `password?`, `desktop?`, `packages?[]`, `encryption?` |
 | GET | `/api/config/:token` | Devuelve el JSON de configuración (consumido por el instalador) |
-| POST | `/api/complete` | El instalador notifica `status`, `hostname`, `error?` |
+| POST | `/api/complete` | El instalador notifica `status`, `hostname`, `duration?`, `error?` |
+| GET | `/api/metrics` | Métricas agregadas de instalaciones |
 | GET | `/api/installations` | Últimas 50 instalaciones |
 | GET | `/api/installations/:token` | Estado de una instalación |
 | GET | `/api/health` | Health check |
@@ -218,6 +220,82 @@ sudo rm /boot/luks-keyfile
 ```
 
 Para TPM2 o FIDO2, consulta `systemd-cryptenroll` (fuera del alcance del MVP).
+
+## 6.2 Snapshots btrfs automáticos (Fase 7)
+
+Cuando el perfil activa `snapshots.enabled`, NEUBAT instala `snapper` y `snap-pac` y configura snapshots automáticos de `/` y `/home`:
+
+- **Timeline:** snapshot cada hora (gestionado por `snapper-timeline.timer`).
+- **Pacman:** `snap-pac` crea snapshots `pre`/`post` en cada operación de paquetes, permitiendo rollback si una actualización rompe el sistema.
+- **Limpieza:** `snapper-cleanup.timer` aplica los límites configurados.
+
+### Configuración en el perfil
+
+```json
+{
+  "snapshots": {
+    "enabled": true,
+    "cleanup": {
+      "hourly": 5,
+      "daily": 7,
+      "weekly": 2,
+      "monthly": 2
+    }
+  }
+}
+```
+
+### Gestión básica
+
+```bash
+# Listar snapshots de raíz
+sudo snapper -c root list
+
+# Ver diferencias entre dos snapshots
+sudo snapper -c root status <id>..<id>
+
+# Restaurar un snapshot (boot desde snapshot + rollback)
+sudo snapper -c root rollback <id>
+```
+
+## 6.3 Firma HMAC y métricas de instalación (Fase 8)
+
+El portal puede firmar cada configuración con **HMAC-SHA256** para que el instalador verifique que no ha sido alterada en tránsito.
+
+### Configuración
+
+Establece el mismo secreto en el portal y en el entorno live del instalador:
+
+```bash
+# .env del portal (o docker compose)
+NEUBAT_HMAC_SECRET=una-cadena-larga-y-aleatoria
+
+# Entorno live del instalador
+export NEUBAT_HMAC_SECRET="una-cadena-larga-y-aleatoria"
+```
+
+Si el secreto está configurado, el portal añade un campo `signature` al JSON de configuración. El instalador lo verifica automáticamente en `fetch_configuration()` y aborta si la firma no coincide.
+
+### Métricas
+
+El instalador mide su duración en segundos y la envía al portal en `/api/complete`:
+
+```bash
+curl http://<portal>:3000/api/metrics
+```
+
+Respuesta:
+
+```json
+{
+  "total": 10,
+  "completed": 8,
+  "failed": 1,
+  "pending": 1,
+  "avg_duration_seconds": 420,
+  "duration_count": 8
+}
+```
 
 ## 7. Perfiles de configuración
 

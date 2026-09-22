@@ -55,5 +55,14 @@
     "cipher": "aes-xts-plain64",
     "key_size": 512,
     "_warning": "El método 'keyfile' almacena la llave en /boot para arranque desatendido. Para mayor seguridad física cambia a 'passphrase' tras la instalación o usa TPM2."
+  },
+  "snapshots": {
+    "enabled": true,
+    "cleanup": {
+      "hourly": 5,
+      "daily": 7,
+      "weekly": 2,
+      "monthly": 2
+    }
   }
 }
