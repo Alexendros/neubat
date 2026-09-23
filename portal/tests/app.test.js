@@ -1,12 +1,30 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const request = require('supertest');
 const app = require('../server');
 const db = require('../lib/db');
 
+const publicIndex = path.join(__dirname, '..', 'public', 'index.html');
+const frontendIndex = path.join(__dirname, '..', 'frontend', 'index.html');
+let wroteStubIndex = false;
+
 describe('app integration', () => {
     beforeAll(async () => {
         await db.initStorage();
+        // public/index.html es artefacto de Vite (gitignored); el job test no lo genera.
+        if (!fs.existsSync(publicIndex)) {
+            fs.mkdirSync(path.dirname(publicIndex), { recursive: true });
+            fs.copyFileSync(frontendIndex, publicIndex);
+            wroteStubIndex = true;
+        }
+    });
+
+    afterAll(() => {
+        if (wroteStubIndex && fs.existsSync(publicIndex)) {
+            fs.unlinkSync(publicIndex);
+        }
     });
 
     test('flujo completo: crear → descargar → completar', async () => {
