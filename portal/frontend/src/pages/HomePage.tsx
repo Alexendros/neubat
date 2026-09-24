@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
+import { downloadInstallJson } from '@/lib/install-config';
 import type { InstallRequest, InstallResponse } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,24 @@ export function HomePage() {
   const [enableEncryption, setEnableEncryption] = useState(true);
   const [encryptionMethod, setEncryptionMethod] = useState<'keyfile' | 'passphrase'>('keyfile');
   const [enableSnapshots, setEnableSnapshots] = useState(true);
+  const [localBody, setLocalBody] = useState<InstallRequest | null>(null);
+
+  function buildBody(form: HTMLFormElement): InstallRequest {
+    const data = new FormData(form);
+    const body: InstallRequest = {
+      profile: (data.get('profile') as string) || 'production',
+      hostname: (data.get('hostname') as string) || undefined,
+      username: (data.get('username') as string) || undefined,
+      packages: ((data.get('packages') as string) || '').split(/\s+/).filter(Boolean),
+    };
+    if (enableEncryption) {
+      body.encryption = { enabled: true, method: encryptionMethod };
+    }
+    if (enableSnapshots) {
+      body.snapshots = { enabled: true };
+    }
+    return body;
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -28,28 +47,16 @@ export function HomePage() {
     setError(null);
     setResult(null);
 
-    const form = new FormData(e.currentTarget);
-    const body: InstallRequest = {
-      profile: form.get('profile') as string,
-      hostname: (form.get('hostname') as string) || undefined,
-      username: (form.get('username') as string) || undefined,
-      packages: (form.get('packages') as string)
-        .split(/\s+/)
-        .filter(Boolean),
-    };
-
-    if (enableEncryption) {
-      body.encryption = { enabled: true, method: encryptionMethod };
-    }
-    if (enableSnapshots) {
-      body.snapshots = { enabled: true };
-    }
+    const body = buildBody(e.currentTarget);
 
     try {
       const data = await api.install(body);
       setResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setLocalBody(null);
+    } catch {
+      setResult(null);
+      setLocalBody(body);
+      downloadInstallJson(body);
     } finally {
       setSubmitting(false);
     }
@@ -69,7 +76,8 @@ export function HomePage() {
             Nueva instalación
           </h2>
           <p className="text-muted-foreground">
-            Configura el sistema, obtén tu URL única y arranca por iPXE. Sin USB, sin intervención.
+            Configura el sistema y, si el portal responde, obtén la URL de iPXE. Instalar por iPXE sigue
+            exigiendo el portal.
           </p>
         </div>
 
@@ -180,10 +188,36 @@ export function HomePage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={submitting} className="w-full">
-                {submitting ? 'Generando...' : 'Generar instalación'}
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" disabled={submitting} className="flex-1">
+                  {submitting ? 'Generando...' : 'Generar instalación'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={(e) => {
+                    const form = e.currentTarget.form;
+                    if (!form) return;
+                    const body = buildBody(form);
+                    setLocalBody(body);
+                    setError(null);
+                    downloadInstallJson(body);
+                  }}
+                >
+                  Descargar JSON
+                </Button>
+              </div>
             </form>
+
+            {localBody && (
+              <div role="status" className="mt-4 space-y-2 rounded-md border border-border bg-muted p-4 text-sm">
+                <p className="font-medium">Modo local: JSON descargado sin registrar en el portal.</p>
+                <p className="text-muted-foreground">
+                  Instalar por iPXE sigue exigiendo el portal.
+                </p>
+              </div>
+            )}
 
             {error && (
               <div

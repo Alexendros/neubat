@@ -35,7 +35,7 @@ docker compose up -d
 | -------- | -------- |
 | `make lint` | shellcheck de `scripts/*.sh` + oxlint del frontend si hay `node_modules` |
 | `make test` | Jest del portal |
-| `make smoke` | `/api/health` + `POST /api/install` contra un portal temporal |
+| `make smoke` | contraste DTCG (4.5:1 / 3:1) + `/api/health` + `POST /api/install` |
 | `make validate` | `bash -n`, `node --check` y JSON de `configs/` |
 
 Complementarios (no required de CI): `make test-frontend`, `make test-bash`, `make test-ansible`, `make test-vm`, `make build-iso`.

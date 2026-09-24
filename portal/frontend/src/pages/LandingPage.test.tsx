@@ -6,28 +6,36 @@ import { AuthProvider } from '@/lib/auth';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <BrowserRouter>{children}</BrowserRouter>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>{children}</AuthProvider>
+    </BrowserRouter>
   );
 }
 
 describe('LandingPage', () => {
   beforeEach(() => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({}),
-    });
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('presenta el producto y enlaces principales', () => {
+  it('presenta las secciones en orden y no llama a la API', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByRole('heading', { name: /NEUBAT: tu Arch/i })).toBeInTheDocument();
+
+    const headings = screen.getAllByRole('heading').map((node) => node.textContent);
+    expect(headings).toEqual([
+      'NEUBAT',
+      'Propuesta',
+      'Características',
+      'Funcionalidades',
+      'Roadmap',
+      'Cierre',
+    ]);
     expect(screen.getByRole('link', { name: /Configurar instalación/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Descargar ISO/i })).toBeInTheDocument();
+    expect(screen.getByText(/sigue necesitando el portal/i)).toBeInTheDocument();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

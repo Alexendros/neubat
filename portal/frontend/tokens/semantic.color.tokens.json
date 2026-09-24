@@ -1,0 +1,122 @@
+{
+  "$meta": {
+    "ds": "neubat",
+    "tier": "semantic",
+    "version": "1.0",
+    "$description": "Roles de color con modos light y dark. Las referencias usan sintaxis DTCG {grupo.token}."
+  },
+  "bg": {
+    "base": {
+      "$value": "{color.neutral.50}",
+      "$type": "color",
+      "$description": "Fondo de página",
+      "$extensions": { "mode": { "light": "{color.neutral.50}", "dark": "{color.neutral.950}" } }
+    },
+    "surface": {
+      "$value": "{color.neutral.0}",
+      "$type": "color",
+      "$description": "Tarjetas y popovers",
+      "$extensions": { "mode": { "light": "{color.neutral.0}", "dark": "{color.neutral.920}" } }
+    },
+    "muted": {
+      "$value": "{color.neutral.100}",
+      "$type": "color",
+      "$description": "Fondo atenuado",
+      "$extensions": { "mode": { "light": "{color.neutral.100}", "dark": "{color.neutral.850}" } }
+    }
+  },
+  "text": {
+    "base": {
+      "$value": "{color.neutral.900}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.900}", "dark": "{color.neutral.100}" } }
+    },
+    "muted": {
+      "$value": "{color.neutral.700}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.700}", "dark": "{color.neutral.300}" } }
+    },
+    "link": {
+      "$value": "{color.brand.700}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.brand.700}", "dark": "{color.brand.300}" } }
+    }
+  },
+  "border": {
+    "base": {
+      "$value": "{color.neutral.500}",
+      "$type": "color",
+      "$description": "Borde de UI, mínimo 3:1 sobre el fondo",
+      "$extensions": { "mode": { "light": "{color.neutral.500}", "dark": "{color.neutral.400}" } }
+    },
+    "strong": {
+      "$value": "{color.neutral.600}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.600}", "dark": "{color.neutral.300}" } }
+    }
+  },
+  "action": {
+    "primary-bg": {
+      "$value": "{color.brand.600}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.brand.600}", "dark": "{color.brand.300}" } }
+    },
+    "primary-bg-hover": {
+      "$value": "{color.brand.800}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.brand.800}", "dark": "{color.brand.400}" } }
+    },
+    "on-primary": {
+      "$value": "{color.neutral.0}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.0}", "dark": "{color.neutral.940}" } }
+    },
+    "secondary-bg": {
+      "$value": "{color.neutral.100}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.100}", "dark": "{color.neutral.850}" } }
+    },
+    "on-secondary": {
+      "$value": "{color.neutral.800}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.800}", "dark": "{color.neutral.100}" } }
+    },
+    "focus-ring": {
+      "$value": "{color.focus.ring}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.focus.ring}", "dark": "{color.focus.ring-strong}" } }
+    }
+  },
+  "feedback": {
+    "success-bg": {
+      "$value": "{color.success.600}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.success.600}", "dark": "{color.success.600}" } }
+    },
+    "success-text": {
+      "$value": "{color.neutral.0}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.0}", "dark": "{color.neutral.0}" } }
+    },
+    "warning-bg": {
+      "$value": "{color.warning.600}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.warning.600}", "dark": "{color.warning.600}" } }
+    },
+    "warning-text": {
+      "$value": "{color.neutral.0}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.0}", "dark": "{color.neutral.0}" } }
+    },
+    "danger-bg": {
+      "$value": "{color.danger.600}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.danger.600}", "dark": "{color.danger.600}" } }
+    },
+    "danger-text": {
+      "$value": "{color.neutral.0}",
+      "$type": "color",
+      "$extensions": { "mode": { "light": "{color.neutral.0}", "dark": "{color.neutral.0}" } }
+    }
+  }
+}

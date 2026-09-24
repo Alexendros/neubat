@@ -10,8 +10,8 @@ import { HomePage } from '@/pages/HomePage';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <Layout>
           <Routes>
             <Route path="/" element={<LandingPage />} />
@@ -23,8 +23,8 @@ function App() {
             <Route path="/instalar" element={<HomePage />} />
           </Routes>
         </Layout>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

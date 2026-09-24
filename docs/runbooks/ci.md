@@ -13,7 +13,7 @@
 | `quality` | `make validate` + `make lint` + Ansible syntax/lint + oxlint frontend | Estática |
 | `test` | `make test` + frontend Vitest + `make test-bash` | Unidad / integración rápida |
 | `build` | `make build-frontend` | Artefacto desplegable (SPA Vite) |
-| `smoke` | `make smoke` + axe sintético del landing | Health + `POST /api/install` + a11y mínima |
+| `smoke` | `make smoke` + axe sintético del landing | Contraste de tokens + health + `POST /api/install` + a11y mínima |
 
 ## Fallos
 

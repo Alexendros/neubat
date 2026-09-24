@@ -5,6 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/build-tokens.mjs",
+    "prebuild": "node scripts/build-tokens.mjs",
+    "prepreview": "node scripts/build-tokens.mjs",
+    "tokens:build": "node scripts/build-tokens.mjs",
+    "tokens:check": "node scripts/check-contrast.mjs",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
