@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { api } from '@/lib/api';
-import type { Installation, InstallRequest, InstallResponse } from '@/types';
+import type { InstallRequest, InstallResponse } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,41 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, Copy, Server, Terminal, Wifi, Shield, History } from 'lucide-react';
-
-const statusColors: Record<Installation['status'], string> = {
-  pending: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  downloaded: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
-  completed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  failed: 'bg-red-500/10 text-red-400 border-red-500/20',
-};
+import { CheckCircle, Copy, Terminal, Wifi, Shield, History } from 'lucide-react';
 
 export function HomePage() {
-  const [installations, setInstallations] = useState<Installation[]>([]);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<InstallResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enableEncryption, setEnableEncryption] = useState(true);
   const [encryptionMethod, setEncryptionMethod] = useState<'keyfile' | 'passphrase'>('keyfile');
   const [enableSnapshots, setEnableSnapshots] = useState(true);
-
-  useEffect(() => {
-    loadInstallations();
-  }, []);
-
-  async function loadInstallations() {
-    try {
-      const data = await api.installations();
-      setInstallations(data.slice().reverse());
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -74,7 +48,6 @@ export function HomePage() {
     try {
       const data = await api.install(body);
       setResult(data);
-      loadInstallations();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
@@ -90,9 +63,11 @@ export function HomePage() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
-      <section className="lg:col-span-2 space-y-6">
+      <section className="lg:col-span-2 space-y-6" aria-labelledby="install-heading">
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Nueva instalación</h2>
+          <h2 id="install-heading" className="text-3xl font-bold tracking-tight">
+            Nueva instalación
+          </h2>
           <p className="text-muted-foreground">
             Configura el sistema, obtén tu URL única y arranca por iPXE. Sin USB, sin intervención.
           </p>
@@ -112,7 +87,7 @@ export function HomePage() {
                 <div className="space-y-2">
                   <Label htmlFor="profile">Perfil</Label>
                   <Select name="profile" defaultValue="production">
-                    <SelectTrigger>
+                    <SelectTrigger id="profile">
                       <SelectValue placeholder="Selecciona perfil" />
                     </SelectTrigger>
                     <SelectContent>
@@ -162,7 +137,7 @@ export function HomePage() {
                         value={encryptionMethod}
                         onValueChange={(v) => setEncryptionMethod(v as 'keyfile' | 'passphrase')}
                       >
-                        <SelectTrigger className="w-full sm:w-64">
+                        <SelectTrigger className="w-full sm:w-64" aria-label="Método de cifrado">
                           <SelectValue placeholder="Método de arranque" />
                         </SelectTrigger>
                         <SelectContent>
@@ -211,13 +186,19 @@ export function HomePage() {
             </form>
 
             {error && (
-              <div className="mt-4 rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+              <div
+                role="alert"
+                className="mt-4 rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400"
+              >
                 {error}
               </div>
             )}
 
             {result && (
-              <div className="mt-4 space-y-3 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-4">
+              <div
+                role="status"
+                className="mt-4 space-y-3 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-4"
+              >
                 <div className="flex items-center gap-2 text-emerald-400">
                   <CheckCircle className="h-5 w-5" />
                   <span className="font-medium">Instalación creada</span>
@@ -243,43 +224,13 @@ export function HomePage() {
             <p>1. Crea una instalación.</p>
             <p>2. Configura iPXE para hacer chain a la URL de arranque.</p>
             <p>3. La máquina descargará el perfil e instalará Arch automáticamente.</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Server className="h-5 w-5 text-violet-400" />
-              Instalaciones recientes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-              </div>
-            ) : installations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sin instalaciones registradas.</p>
-            ) : (
-              <div className="space-y-2">
-                {installations.slice(0, 8).map((i) => (
-                  <div
-                    key={i.token}
-                    className="flex items-center justify-between rounded-md border border-border bg-secondary/50 px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <code className="text-xs">{i.token.slice(0, 8)}…</code>
-                      <div className="text-xs text-muted-foreground">{i.profile}</div>
-                    </div>
-                    <Badge variant="outline" className={statusColors[i.status]}>
-                      {i.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
+            <p>
+              Las instalaciones registradas solo son visibles en el{' '}
+              <a href="/admin" className="text-primary underline-offset-4 hover:underline">
+                panel de administración
+              </a>
+              .
+            </p>
           </CardContent>
         </Card>
       </aside>
@@ -293,7 +244,14 @@ function CopyField({ label, value, onCopy }: { label: string; value: string; onC
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <div className="flex items-center gap-2 rounded-md border border-border bg-background p-2">
         <code className="flex-1 truncate text-xs font-mono">{value}</code>
-        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => onCopy(value)}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={() => onCopy(value)}
+          aria-label={`Copiar ${label}`}
+        >
           <Copy className="h-3.5 w-3.5" />
         </Button>
       </div>

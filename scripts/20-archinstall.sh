@@ -38,6 +38,8 @@ fetch_configuration() {
     # shellcheck disable=SC2034
     PACKAGES=$(cfg_get "${NEUBAT_CONFIG_FILE}" packages "")
     # shellcheck disable=SC2034
+    AUR_PACKAGES=$(cfg_get "${NEUBAT_CONFIG_FILE}" aur_packages "")
+    # shellcheck disable=SC2034
     TIMEZONE=$(cfg_get "${NEUBAT_CONFIG_FILE}" timezone "Europe/Madrid")
     # shellcheck disable=SC2034
     LOCALE=$(cfg_get "${NEUBAT_CONFIG_FILE}" locale "es_ES.UTF-8")
@@ -104,6 +106,11 @@ secret = sys.argv[2].encode()
 sig = cfg.pop('signature', None)
 if sig is None:
     sys.exit(2)
+def canonical_object(value):
+    if not isinstance(value, dict):
+        return ''
+    return ','.join(f'{k}={"" if value[k] is None else str(value[k])}' for k in sorted(value))
+
 parts = [
     str(cfg.get('token', '')),
     str(cfg.get('machine_id', '')),
@@ -116,7 +123,9 @@ parts = [
     str(cfg.get('locale', '')),
     str(cfg.get('keyboard', '')),
     *(sorted(cfg.get('packages', [])) if isinstance(cfg.get('packages'), list) else []),
-    *(sorted(cfg.get('services', [])) if isinstance(cfg.get('services'), list) else [])
+    *(sorted(cfg.get('services', [])) if isinstance(cfg.get('services'), list) else []),
+    canonical_object(cfg.get('encryption')),
+    canonical_object(cfg.get('snapshots')),
 ]
 payload = '|'.join(parts).encode()
 expected = hmac.new(secret, payload, hashlib.sha256).hexdigest()
@@ -133,6 +142,35 @@ PYEOF
 install_base_system() {
     log "Instalando sistema base Arch Linux..."
 
+    # Exportar JSON de archinstall para auditoría y para el motor desatendido.
+    if [[ -f "${NEUBAT_CONFIG_FILE}" ]]; then
+        python3 - "${NEUBAT_CONFIG_FILE}" "${NEUBAT_WORKDIR}" <<'PYEOF' || warning "No se pudo exportar config archinstall"
+import json, sys
+cfg = json.load(open(sys.argv[1]))
+out = sys.argv[2]
+pair = cfg.get("archinstall")
+if not pair:
+    sys.exit(0)
+open(f"{out}/user_configuration.json", "w").write(json.dumps(pair.get("config", {}), indent=2))
+open(f"{out}/user_credentials.json", "w").write(json.dumps(pair.get("creds", {}), indent=2))
+print("archinstall configs written")
+PYEOF
+    fi
+
+    # Motor archinstall: solo si está en el live y NEUBAT_USE_ARCHINSTALL=1.
+    # En ese modo se asume que 10-partition aún no montó /mnt (ver neubat-install.sh).
+    if [[ "${NEUBAT_USE_ARCHINSTALL:-0}" == "1" ]] && command -v archinstall >/dev/null 2>&1 \
+        && [[ -f "${NEUBAT_WORKDIR}/user_configuration.json" ]]; then
+        log "Invocando archinstall --config/--creds (desatendido)..."
+        if archinstall --config "${NEUBAT_WORKDIR}/user_configuration.json" \
+            --creds "${NEUBAT_WORKDIR}/user_credentials.json" \
+            --silent; then
+            success "Sistema base instalado con archinstall"
+            return 0
+        fi
+        warning "archinstall falló; se continúa con pacstrap"
+    fi
+
     # Optimizar mirrors (España y vecinos prioritarios)
     log "Optimizando mirrors..."
     reflector --country Spain,Germany,France \
@@ -142,12 +180,8 @@ install_base_system() {
               --sort rate \
               --save /etc/pacman.d/mirrorlist || warning "reflector falló; se usan los mirrors por defecto"
 
-    # Paquetes esenciales
-    log "Instalando paquetes base (esto puede tardar)..."
-    # Paquetes base; cryptsetup es obligatorio si el perfil usa LUKS,
-    # y se instala siempre para simplificar la lógica y poder reutilizar
-    # el mismo ISO para instalaciones cifradas o no.
-    pacstrap -K /mnt \
+    log "Instalando paquetes base con pacstrap..."
+    pacstrap -K /mnt --noconfirm \
         base linux linux-firmware \
         btrfs-progs \
         cryptsetup \
@@ -160,9 +194,9 @@ install_base_system() {
         neovim nano \
         terminus-font \
         openssh \
-        ansible
+        ansible \
+        python-archinstall || true
 
-    # fstab
     log "Generando fstab..."
     genfstab -U /mnt >> /mnt/etc/fstab
 

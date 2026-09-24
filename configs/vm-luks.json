@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "hostname": "neubat-vm-luks",
+  "username": "neubat",
+  "password": "",
+  "disk": "/dev/nvme0n1",
+  "desktop": "none",
+  "packages": [
+    "htop",
+    "git",
+    "curl",
+    "openssh"
+  ],
+  "services": [
+    "NetworkManager",
+    "sshd"
+  ],
+  "timezone": "Europe/Madrid",
+  "locale": "es_ES.UTF-8",
+  "keyboard": "es",
+  "encryption": {
+    "enabled": true,
+    "method": "keyfile",
+    "passphrase": "",
+    "cipher": "aes-xts-plain64",
+    "key_size": 512
+  },
+  "snapshots": {
+    "enabled": true,
+    "cleanup": {
+      "hourly": 2,
+      "daily": 3,
+      "weekly": 1,
+      "monthly": 1
+    }
+  }
+}

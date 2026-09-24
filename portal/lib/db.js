@@ -60,6 +60,16 @@ function hmacSecret() {
     return process.env.NEUBAT_HMAC_SECRET || '';
 }
 
+// Forma canónica de un objeto anidado (claves ordenadas). Ausente → ''.
+// Debe coincidir con scripts/20-archinstall.sh (verify_config_signature).
+function canonicalObject(value) {
+    if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+        return '';
+    }
+    const keys = Object.keys(value).sort();
+    return keys.map((k) => `${k}=${value[k] == null ? '' : String(value[k])}`).join(',');
+}
+
 // Payload determinista usado para la firma. Debe coincidir exactamente con
 // la reconstrucción que hace el instalador en scripts/20-archinstall.sh.
 function signingPayload(config) {
@@ -74,8 +84,10 @@ function signingPayload(config) {
         String(config.timezone || ''),
         String(config.locale || ''),
         String(config.keyboard || ''),
-        ...(Array.isArray(config.packages) ? config.packages.sort() : []),
-        ...(Array.isArray(config.services) ? config.services.sort() : [])
+        ...(Array.isArray(config.packages) ? [...config.packages].sort() : []),
+        ...(Array.isArray(config.services) ? [...config.services].sort() : []),
+        canonicalObject(config.encryption),
+        canonicalObject(config.snapshots)
     ];
     return parts.join('|');
 }
@@ -100,6 +112,7 @@ module.exports = {
     loadProfile,
     configPathFor,
     hmacSecret,
+    canonicalObject,
     signingPayload,
     signConfig
 };

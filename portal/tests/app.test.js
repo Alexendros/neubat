@@ -12,6 +12,7 @@ let wroteStubIndex = false;
 
 describe('app integration', () => {
     beforeAll(async () => {
+        process.env.ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'test-admin-token';
         await db.initStorage();
         // public/index.html es artefacto de Vite (gitignored); el job test no lo genera.
         if (!fs.existsSync(publicIndex)) {
@@ -50,6 +51,7 @@ describe('app integration', () => {
 
         const status = await request(app)
             .get(`/api/installations/${token}`)
+            .set('Authorization', `Bearer ${process.env.ADMIN_TOKEN || 'test-admin-token'}`)
             .expect(200);
 
         expect(status.body.status).toBe('completed');

@@ -101,6 +101,40 @@ jobs:
       - name: Run frontend tests
         run: cd portal/frontend && npm test
 
+      - name: Install axe-core for a11y smoke
+        run: cd portal/frontend && npm install --no-save axe-core jsdom
+
+      - name: Accessibility smoke (axe on landing markup)
+        run: |
+          cd portal/frontend
+          node <<'NODE'
+          const { JSDOM } = require('jsdom');
+          const fs = require('fs');
+          const axeSource = fs.readFileSync(require.resolve('axe-core/axe.js'), 'utf8');
+          const html = `<!DOCTYPE html><html lang="es"><head><title>NEUBAT</title></head>
+          <body class="dark">
+            <a href="#contenido" class="skip-link">Saltar al contenido</a>
+            <header><nav aria-label="Principal"><a href="/">Inicio</a></nav></header>
+            <main id="contenido"><h1>NEUBAT: tu Arch, tu ISO, tu red</h1>
+            <p>Configura desde el navegador una instalación desatendida.</p>
+            <a href="/configurar">Configurar instalación</a></main>
+            <footer>NEUBAT</footer>
+          </body></html>`;
+          const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true });
+          const { window } = dom;
+          window.eval(axeSource);
+          window.axe.run(window.document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] })
+            .then((results) => {
+              const serious = results.violations.filter(v => ['critical', 'serious'].includes(v.impact));
+              if (serious.length) {
+                console.error(JSON.stringify(serious, null, 2));
+                process.exit(1);
+              }
+              console.log('axe: sin violaciones critical/serious');
+            })
+            .catch((err) => { console.error(err); process.exit(1); });
+          NODE
+
   build-frontend:
     runs-on: ubuntu-latest
     needs: validate

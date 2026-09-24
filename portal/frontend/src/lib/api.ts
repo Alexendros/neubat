@@ -1,15 +1,29 @@
-import type { HealthResponse, InstallRequest, InstallResponse, Installation } from '@/types';
+import type {
+  HealthResponse,
+  InstallRequest,
+  InstallResponse,
+  Installation,
+  Recommendation,
+  ReleaseInfo,
+  SavedConfig,
+  SystemCopy,
+  User,
+} from '@/types';
 
 const API_BASE = '';
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers || {}),
+    },
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || `Error ${res.status}`);
+    throw new Error((data as { error?: string }).error || `Error ${res.status}`);
   }
   return data as T;
 }
@@ -23,7 +37,10 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  installations: () => fetchJson<Installation[]>('/api/installations'),
+  adminInstallations: (adminToken: string) =>
+    fetchJson<Installation[]>('/api/admin/installations', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    }),
 
   complete: (token: string, status: Installation['status'], hostname?: string) =>
     fetchJson<{ success: boolean }>('/api/complete', {
@@ -49,4 +66,48 @@ export const api = {
       method: 'POST',
       headers: { Authorization: `Bearer ${adminToken}` },
     }),
+
+  register: (email: string, password: string, display_name?: string) =>
+    fetchJson<{ success: boolean; user: User }>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, display_name }),
+    }),
+
+  login: (email: string, password: string) =>
+    fetchJson<{ success: boolean; user: User }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+
+  logout: () =>
+    fetchJson<{ success: boolean }>('/api/auth/logout', { method: 'POST' }),
+
+  me: () => fetchJson<{ user: User }>('/api/auth/me'),
+
+  recommendations: () =>
+    fetchJson<{ recommendations: Recommendation[] }>('/api/account/recommendations'),
+
+  configs: () => fetchJson<{ configs: SavedConfig[] }>('/api/account/configs'),
+
+  saveConfig: (body: Record<string, unknown>) =>
+    fetchJson<{ success: boolean; config: SavedConfig }>('/api/account/configs', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  copies: () =>
+    fetchJson<{ copies: SystemCopy[]; note: string }>('/api/account/copies'),
+
+  absorbCode: () =>
+    fetchJson<{ code: string; expires_in_seconds: number; usage: string }>(
+      '/api/account/absorb-code',
+      { method: 'POST' }
+    ),
+
+  confirmCopy: (id: string) =>
+    fetchJson<{ success: boolean; copy: SystemCopy }>(`/api/account/copies/${id}/confirm`, {
+      method: 'POST',
+    }),
+
+  releases: () => fetchJson<ReleaseInfo>('/api/account/releases'),
 };

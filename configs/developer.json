@@ -16,12 +16,7 @@
     "python-poetry",
     "go",
     "rust",
-    "code",
-    "jetbrains-toolbox",
-    "postman-bin",
-    "insomnia",
     "github-cli",
-    "gitlab-runner",
     "kubectl",
     "helm",
     "minikube",
@@ -29,6 +24,13 @@
     "ansible",
     "git",
     "okular"
+  ],
+  "aur_packages": [
+    "code",
+    "jetbrains-toolbox",
+    "postman-bin",
+    "insomnia",
+    "gitlab-runner"
   ],
   "services": [
     "NetworkManager",

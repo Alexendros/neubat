@@ -5,16 +5,17 @@
 
 const express = require('express');
 const db = require('../lib/db');
+const { requireAdmin } = require('../lib/auth');
 
 const router = express.Router();
 
-// GET /api/health — health check
+// GET /api/health — health check (público)
 router.get('/health', (req, res) => {
     res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() });
 });
 
-// GET /api/installations — últimas 50 instalaciones (más recientes primero)
-router.get('/installations', async (req, res) => {
+// GET /api/installations — últimas 50 (requiere ADMIN_TOKEN)
+router.get('/installations', requireAdmin, async (req, res) => {
     try {
         const store = await db.readDB();
         res.json(store.installations.slice(-50).reverse());
@@ -23,8 +24,8 @@ router.get('/installations', async (req, res) => {
     }
 });
 
-// GET /api/installations/:token — estado de una instalación concreta
-router.get('/installations/:token', async (req, res) => {
+// GET /api/installations/:token — estado de una instalación (requiere ADMIN_TOKEN)
+router.get('/installations/:token', requireAdmin, async (req, res) => {
     try {
         const store = await db.readDB();
         const install = store.installations.find(i => i.token === req.params.token);
@@ -35,8 +36,8 @@ router.get('/installations/:token', async (req, res) => {
     }
 });
 
-// GET /api/metrics — métricas agregadas de instalaciones
-router.get('/metrics', async (req, res) => {
+// GET /api/metrics — métricas agregadas (requiere ADMIN_TOKEN)
+router.get('/metrics', requireAdmin, async (req, res) => {
     try {
         const store = await db.readDB();
         const installs = store.installations || [];

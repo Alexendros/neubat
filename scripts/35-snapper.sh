@@ -15,11 +15,11 @@ configure_snapper() {
     arch-chroot /mnt pacman -S --noconfirm --needed snapper snap-pac \
         || warning "No se pudieron instalar snapper/snap-pac"
 
-    # Crear configuraciones de snapper. Si fallan (p.ej. FS no btrfs), advertir
-    # pero no abortar: la instalación sigue usable sin snapshots.
-    arch-chroot /mnt snapper -c root create-config / \
+    # Crear configuraciones de snapper. En un chroot no hay bus D-Bus disponible;
+    # --no-dbus evita el error org.freedesktop.DBus.Error.ServiceUnknown.
+    arch-chroot /mnt snapper --no-dbus -c root create-config / \
         || warning "No se pudo crear configuración snapper para /"
-    arch-chroot /mnt snapper -c home create-config /home \
+    arch-chroot /mnt snapper --no-dbus -c home create-config /home \
         || warning "No se pudo crear configuración snapper para /home"
 
     # Aplicar límites de retención desde el perfil
