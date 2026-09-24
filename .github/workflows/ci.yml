@@ -155,9 +155,16 @@ jobs:
           <body class="dark">
             <a href="#contenido" class="skip-link">Saltar al contenido</a>
             <header><nav aria-label="Principal"><a href="/">Inicio</a></nav></header>
-            <main id="contenido"><h1>NEUBAT: tu Arch, tu ISO, tu red</h1>
-            <p>Configura desde el navegador una instalación desatendida.</p>
-            <a href="/configurar">Configurar instalación</a></main>
+            <main id="contenido">
+            <article>
+            <header><h1>NEUBAT</h1></header>
+            <section><h2>Propuesta</h2><p>NEUBAT define en el navegador una instalación desatendida de Arch Linux.</p></section>
+            <section><h2>Características</h2><p>Perfil JSON, btrfs y dos entradas de arranque.</p></section>
+            <section><h2>Funcionalidades</h2><p>Asistente, ISO y arranque por URL.</p></section>
+            <section><h2>Roadmap</h2><p>El instalador iPXE real sigue necesitando el portal.</p></section>
+            <section><h2>Cierre</h2><a href="/configurar">Configurar instalación</a></section>
+            </article>
+            </main>
             <footer>NEUBAT</footer>
           </body></html>`;
           const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true });

@@ -1,0 +1,58 @@
+{
+  "$meta": {
+    "ds": "neubat",
+    "tier": "primitive",
+    "colorSpace": "oklch",
+    "spec": "W3C DTCG Format Module",
+    "version": "1.0"
+  },
+  "color": {
+    "brand": {
+      "100": { "$value": "oklch(0.93 0.03 240)", "$type": "color", "$description": "Tinte de marca" },
+      "200": { "$value": "oklch(0.84 0.08 230)", "$type": "color" },
+      "300": { "$value": "oklch(0.78 0.12 220)", "$type": "color", "$description": "Acción sobre fondo oscuro (primary histórico)" },
+      "400": { "$value": "oklch(0.70 0.12 220)", "$type": "color", "$description": "Hover de acción en oscuro" },
+      "500": { "$value": "oklch(0.55 0.14 240)", "$type": "color" },
+      "600": { "$value": "oklch(0.45 0.14 240)", "$type": "color", "$description": "Acción sobre fondo claro (primary histórico)" },
+      "700": { "$value": "oklch(0.40 0.14 240)", "$type": "color", "$description": "Enlace sobre claro" },
+      "800": { "$value": "oklch(0.38 0.13 240)", "$type": "color", "$description": "Hover de acción en claro" },
+      "900": { "$value": "oklch(0.28 0.08 240)", "$type": "color" }
+    },
+    "neutral": {
+      "0": { "$value": "oklch(1 0 0)", "$type": "color", "$description": "Superficie blanca" },
+      "50": { "$value": "oklch(0.985 0.01 250)", "$type": "color", "$description": "Fondo de página en claro" },
+      "100": { "$value": "oklch(0.94 0.015 250)", "$type": "color", "$description": "Texto sobre oscuro y fondo atenuado en claro" },
+      "200": { "$value": "oklch(0.88 0.02 250)", "$type": "color" },
+      "300": { "$value": "oklch(0.78 0.02 250)", "$type": "color", "$description": "Texto secundario en oscuro" },
+      "400": { "$value": "oklch(0.62 0.03 255)", "$type": "color", "$description": "Borde UI en oscuro (≥3:1)" },
+      "500": { "$value": "oklch(0.52 0.025 252)", "$type": "color", "$description": "Borde UI en claro (≥3:1)" },
+      "600": { "$value": "oklch(0.42 0.03 255)", "$type": "color" },
+      "700": { "$value": "oklch(0.38 0.03 255)", "$type": "color", "$description": "Texto secundario en claro" },
+      "800": { "$value": "oklch(0.28 0.04 255)", "$type": "color" },
+      "850": { "$value": "oklch(0.26 0.035 255)", "$type": "color", "$description": "Superficie atenuada en oscuro" },
+      "900": { "$value": "oklch(0.22 0.03 255)", "$type": "color", "$description": "Texto sobre claro" },
+      "920": { "$value": "oklch(0.20 0.03 255)", "$type": "color", "$description": "Tarjeta en oscuro" },
+      "940": { "$value": "oklch(0.18 0.03 255)", "$type": "color", "$description": "Tinta sobre acción clara en oscuro" },
+      "950": { "$value": "oklch(0.16 0.025 255)", "$type": "color", "$description": "Fondo de página en oscuro" }
+    },
+    "success": {
+      "100": { "$value": "oklch(0.93 0.04 155)", "$type": "color" },
+      "600": { "$value": "oklch(0.45 0.13 155)", "$type": "color" },
+      "700": { "$value": "oklch(0.38 0.12 155)", "$type": "color" }
+    },
+    "warning": {
+      "100": { "$value": "oklch(0.94 0.04 80)", "$type": "color" },
+      "600": { "$value": "oklch(0.45 0.12 80)", "$type": "color" },
+      "700": { "$value": "oklch(0.38 0.11 80)", "$type": "color" }
+    },
+    "danger": {
+      "100": { "$value": "oklch(0.93 0.04 25)", "$type": "color" },
+      "600": { "$value": "oklch(0.45 0.18 25)", "$type": "color" },
+      "700": { "$value": "oklch(0.38 0.16 25)", "$type": "color" }
+    },
+    "focus": {
+      "ring": { "$value": "oklch(0.45 0.14 240)", "$type": "color", "$description": "Anillo de foco en claro" },
+      "ring-strong": { "$value": "oklch(0.78 0.12 220)", "$type": "color", "$description": "Anillo de foco en oscuro" }
+    }
+  }
+}

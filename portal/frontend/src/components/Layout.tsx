@@ -1,9 +1,38 @@
 import { Brand } from './Brand';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Download, Shield, UserRound, Wand2 } from 'lucide-react';
+import { BookOpen, Download, Moon, Shield, Sun, UserRound, Wand2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem('neubat-theme');
+    if (stored === 'light' || stored === 'dark') return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem('neubat-theme', theme);
+  }, [theme]);
+
+  const next = theme === 'dark' ? 'light' : 'dark';
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      aria-pressed={theme === 'dark'}
+      aria-label={next === 'dark' ? 'Activar tema oscuro' : 'Activar tema claro'}
+      onClick={() => setTheme(next)}
+    >
+      {theme === 'dark' ? <Sun className="mr-2 h-4 w-4" aria-hidden /> : <Moon className="mr-2 h-4 w-4" aria-hidden />}
+      {theme === 'dark' ? 'Tema claro' : 'Tema oscuro'}
+    </Button>
+  );
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -22,7 +51,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [location.pathname]);
 
   return (
-    <div className="dark flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col">
       <a href="#contenido" className="skip-link">
         Saltar al contenido
       </a>
@@ -63,6 +92,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 Wiki
               </a>
             </Button>
+            <ThemeToggle />
           </nav>
         </div>
       </header>

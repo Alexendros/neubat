@@ -1,0 +1,67 @@
+{
+  "$meta": {
+    "ds": "neubat",
+    "tier": "primitive",
+    "version": "1.0"
+  },
+  "space": {
+    "0": { "$value": "0", "$type": "dimension" },
+    "1": { "$value": "0.25rem", "$type": "dimension" },
+    "2": { "$value": "0.5rem", "$type": "dimension" },
+    "3": { "$value": "0.75rem", "$type": "dimension" },
+    "4": { "$value": "1rem", "$type": "dimension" },
+    "5": { "$value": "1.25rem", "$type": "dimension" },
+    "6": { "$value": "1.5rem", "$type": "dimension" },
+    "8": { "$value": "2rem", "$type": "dimension" },
+    "10": { "$value": "2.5rem", "$type": "dimension" },
+    "12": { "$value": "3rem", "$type": "dimension" },
+    "16": { "$value": "4rem", "$type": "dimension" }
+  },
+  "radius": {
+    "none": { "$value": "0", "$type": "borderRadius" },
+    "sm": { "$value": "0.375rem", "$type": "borderRadius" },
+    "md": { "$value": "0.5rem", "$type": "borderRadius" },
+    "lg": { "$value": "0.625rem", "$type": "borderRadius", "$description": "Radio por defecto de la SPA" },
+    "xl": { "$value": "0.875rem", "$type": "borderRadius" },
+    "full": { "$value": "62.5rem", "$type": "borderRadius" }
+  },
+  "shadow": {
+    "none": { "$value": "none", "$type": "shadow" },
+    "sm": {
+      "$value": "0 1px 2px oklch(0.16 0.025 255 / 0.18)",
+      "$type": "shadow"
+    },
+    "md": {
+      "$value": "0 4px 12px oklch(0.16 0.025 255 / 0.22)",
+      "$type": "shadow"
+    },
+    "lg": {
+      "$value": "0 12px 32px oklch(0.16 0.025 255 / 0.28)",
+      "$type": "shadow"
+    }
+  },
+  "motion": {
+    "duration": {
+      "fast": { "$value": "120ms", "$type": "duration" },
+      "base": { "$value": "200ms", "$type": "duration" },
+      "slow": { "$value": "320ms", "$type": "duration" }
+    },
+    "easing": {
+      "out": { "$value": "cubic-bezier(0.16, 1, 0.3, 1)", "$type": "cubicBezier" }
+    }
+  },
+  "z": {
+    "0": { "$value": "0", "$type": "number" },
+    "10": { "$value": "10", "$type": "number" },
+    "20": { "$value": "20", "$type": "number" },
+    "30": { "$value": "30", "$type": "number" },
+    "40": { "$value": "40", "$type": "number" },
+    "50": { "$value": "50", "$type": "number" }
+  },
+  "breakpoint": {
+    "sm": { "$value": "40rem", "$type": "dimension" },
+    "md": { "$value": "48rem", "$type": "dimension" },
+    "lg": { "$value": "64rem", "$type": "dimension" },
+    "xl": { "$value": "80rem", "$type": "dimension" }
+  }
+}

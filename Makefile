@@ -31,8 +31,10 @@ lint:
 test:
 	cd portal && npm test
 
-# Fachada canónica: health + POST /api/install (falla si el portal no responde)
+# Fachada canónica: contraste de tokens + health + POST /api/install
 smoke:
+	@node portal/frontend/scripts/build-tokens.mjs --check
+	@node portal/frontend/scripts/check-contrast.mjs
 	@cd portal && \
 	PORT=3100 node server.js >/tmp/neubat-smoke.log 2>&1 & pid=$$!; \
 	ok=0; \

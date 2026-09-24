@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { downloadInstallJson } from '@/lib/install-config';
 import { useAuth } from '@/lib/auth';
 import type { InstallRequest, InstallResponse, Recommendation } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -43,13 +44,25 @@ export function ConfigurePage() {
   const [encryptionMethod, setEncryptionMethod] = useState<'keyfile' | 'prompt'>('keyfile');
   const [enableSnapshots, setEnableSnapshots] = useState(true);
   const [desktop, setDesktop] = useState('kde');
+  const [profile, setProfile] = useState('production');
   const [selectedPackages, setSelectedPackages] = useState<string[]>(['git', 'htop']);
   const [packageQuery, setPackageQuery] = useState('');
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recsOffline, setRecsOffline] = useState(false);
   const [saveName, setSaveName] = useState('');
+  const [localBody, setLocalBody] = useState<InstallRequest | null>(null);
 
   useEffect(() => {
-    api.recommendations().then((r) => setRecommendations(r.recommendations)).catch(() => {});
+    api
+      .recommendations()
+      .then((r) => {
+        setRecommendations(r.recommendations);
+        setRecsOffline(false);
+      })
+      .catch(() => {
+        setRecommendations([]);
+        setRecsOffline(true);
+      });
   }, []);
 
   const catalog = useMemo(() => Object.values(PACKAGE_GROUPS).flat(), []);
@@ -66,25 +79,18 @@ export function ConfigurePage() {
     if (rec.packages?.length) setSelectedPackages(rec.packages);
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    setResult(null);
-
-    const form = new FormData(e.currentTarget);
-    const extra = ((form.get('packages_extra') as string) || '')
-      .split(/\s+/)
-      .filter(Boolean);
+  function buildBody(form: HTMLFormElement): InstallRequest {
+    const data = new FormData(form);
+    const extra = ((data.get('packages_extra') as string) || '').split(/\s+/).filter(Boolean);
     const body: InstallRequest = {
-      profile: (form.get('profile') as string) || 'base',
-      hostname: (form.get('hostname') as string) || undefined,
-      username: (form.get('username') as string) || undefined,
+      profile: profile || 'base',
+      hostname: (data.get('hostname') as string) || undefined,
+      username: (data.get('username') as string) || undefined,
       desktop,
       packages: [...new Set([...selectedPackages, ...extra])],
-      locale: (form.get('locale') as string) || 'es_ES.UTF-8',
-      keyboard: (form.get('keyboard') as string) || 'es',
-      timezone: (form.get('timezone') as string) || 'Europe/Madrid',
+      locale: (data.get('locale') as string) || 'es_ES.UTF-8',
+      keyboard: (data.get('keyboard') as string) || 'es',
+      timezone: (data.get('timezone') as string) || 'Europe/Madrid',
     };
     if (enableEncryption) {
       body.encryption = {
@@ -93,15 +99,39 @@ export function ConfigurePage() {
       };
     }
     if (enableSnapshots) body.snapshots = { enabled: true };
+    return body;
+  }
+
+  function handleDownload(form: HTMLFormElement) {
+    const body = buildBody(form);
+    setLocalBody(body);
+    setError(null);
+    downloadInstallJson(body);
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setResult(null);
+
+    const body = buildBody(e.currentTarget);
 
     try {
       const data = await api.install(body);
       setResult(data);
+      setLocalBody(null);
       if (user && saveName.trim()) {
-        await api.saveConfig({ name: saveName.trim(), ...body });
+        try {
+          await api.saveConfig({ name: saveName.trim(), ...body });
+        } catch {
+          setError('La instalación quedó en el portal, pero no se pudo guardar en la cuenta.');
+        }
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } catch {
+      setResult(null);
+      setLocalBody(body);
+      downloadInstallJson(body);
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +151,11 @@ export function ConfigurePage() {
             Configurar instalación
           </h1>
           <p className="text-muted-foreground">
-            Elige escritorio, paquetes y opciones. Genera una URL iPXE o guarda el perfil en tu cuenta.
+            Elige escritorio, paquetes y opciones. Si el portal responde, registra la instalación. Si no,
+            descarga el JSON y úsalo cuando el portal esté en marcha.
+          </p>
+          <p className="text-sm text-foreground">
+            Instalar por iPXE sigue exigiendo el portal. Este asistente no arranca la máquina por sí solo.
           </p>
           {!user && (
             <p className="text-sm text-muted-foreground" role="status">
@@ -147,7 +181,7 @@ export function ConfigurePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="profile">Perfil base</Label>
-                  <Select name="profile" defaultValue="production">
+                  <Select value={profile} onValueChange={setProfile}>
                     <SelectTrigger id="profile">
                       <SelectValue placeholder="Perfil" />
                     </SelectTrigger>
@@ -294,9 +328,22 @@ export function ConfigurePage() {
                 </div>
               )}
 
-              <Button type="submit" disabled={submitting} className="w-full">
-                {submitting ? 'Generando…' : 'Generar instalación'}
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" disabled={submitting} className="flex-1">
+                  {submitting ? 'Generando…' : 'Generar instalación'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={(e) => {
+                    const form = e.currentTarget.form;
+                    if (form) handleDownload(form);
+                  }}
+                >
+                  Descargar JSON
+                </Button>
+              </div>
             </form>
 
             {error && (
@@ -305,6 +352,18 @@ export function ConfigurePage() {
               </div>
             )}
 
+            {localBody && (
+              <div role="status" className="mt-4 space-y-3 rounded-md border border-border bg-muted p-4">
+                <p className="font-medium">Modo local: el portal no ha registrado esta instalación.</p>
+                <p className="text-sm text-muted-foreground">
+                  El JSON ya se puede descargar. Instalar por iPXE sigue exigiendo el portal: sin{' '}
+                  <code className="font-mono">boot_url</code> la máquina no arranca por red.
+                </p>
+                <pre className="max-h-48 overflow-auto rounded-md border border-border bg-background p-3 text-xs">
+                  {JSON.stringify(localBody, null, 2)}
+                </pre>
+              </div>
+            )}
             {result && (
               <div role="status" className="mt-4 space-y-3 rounded-md border border-primary/30 bg-primary/10 p-4">
                 <div className="flex items-center gap-2 text-primary">
@@ -334,6 +393,11 @@ export function ConfigurePage() {
             <CardDescription>Perfiles curados como punto de partida.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            {recsOffline && (
+              <p className="text-sm text-muted-foreground" role="status">
+                Sin portal no hay recomendaciones. El formulario y la descarga del JSON siguen disponibles.
+              </p>
+            )}
             {recommendations.map((rec) => (
               <div key={rec.id} className="rounded-md border border-border p-3">
                 <h3 className="font-medium">{rec.title}</h3>

@@ -7,19 +7,35 @@ import { AuthProvider } from '@/lib/auth';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <BrowserRouter>{children}</BrowserRouter>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>{children}</AuthProvider>
+    </BrowserRouter>
   );
 }
 
 describe('HomePage', () => {
   beforeEach(() => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 401,
-      json: async () => ({ error: 'Sin sesión' }),
-    });
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/install') && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            token: 'tokentest',
+            machine_id: 'machine1',
+            config_url: '/api/config/tokentest',
+            boot_url: '/boot/tokentest',
+            message: 'Creada',
+          }),
+        };
+      }
+      return {
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Sin sesión' }),
+      };
+    }) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -35,24 +51,6 @@ describe('HomePage', () => {
   });
 
   it('crea una instalación y muestra resultados', async () => {
-    (globalThis.fetch as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        json: async () => ({ error: 'Sin sesión' }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          token: 'tokentest',
-          machine_id: 'machine1',
-          config_url: '/api/config/tokentest',
-          boot_url: '/boot/tokentest',
-          message: 'Creada',
-        }),
-      });
-
     render(<HomePage />, { wrapper: Wrapper });
 
     const button = screen.getByRole('button', { name: /Generar instalación/i });

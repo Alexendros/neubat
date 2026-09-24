@@ -64,13 +64,14 @@ ansible/           first-boot (ConditionFirstBoot)
 | Perfil JSON | `configs/*.json` | PR + docs/guides/packages.md |
 | Token de instalación | hex 32 chars | `configPathFor()` — no relajar |
 | Firma de config | `NEUBAT_HMAC_SECRET` | Entorno portal + live (nunca en git) |
+| Tokens DTCG OKLCH | `portal/frontend/tokens/` v1.0 | `tokens/CONTRACT.md`; `make smoke` comprueba contraste |
 
 ## 5. Calidad
 
 - Jest + Supertest sobre el portal; Vitest + oxlint en el frontend
 - `bash -n` + shellcheck + bats en `scripts/`
 - Ansible syntax-check / ansible-lint
-- CI: `quality` → `test` → `build` (SPA) → `smoke` (`/api/health` + `POST /api/install`)
+- CI: `quality` → `test` → `build` (SPA) → `smoke` (`/api/health` + `POST /api/install` + contraste DTCG)
 - QEMU/NVMe (`make test-vm`) y build de ISO: **opt-in**, no required
 
 ## 6. Decisiones de diseño (vivas)
