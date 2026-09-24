@@ -23,7 +23,7 @@ export interface InstallRequest {
   timezone?: string;
   encryption?: {
     enabled: boolean;
-    method?: 'keyfile' | 'passphrase';
+    method?: 'keyfile' | 'passphrase' | 'interactive';
   };
   snapshots?: {
     enabled: boolean;
