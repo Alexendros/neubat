@@ -26,6 +26,7 @@ sin ip=dhcp en kernel directo, patrones de consola tolerantes a ANSI/UTF-8).
 """
 import json
 import os
+import shlex
 import shutil
 import signal
 import subprocess
@@ -95,9 +96,10 @@ def prepare_workdir():
     subprocess.run(["qemu-img", "create", "-f", "qcow2",
                     os.path.join(VM, "neubat-disk.qcow2"), f"{DISK_GIB}G"],
                    check=True, capture_output=True)
-    # Tarball del repo para descargarlo dentro de la VM
+    # Tarball del repo para descargarlo dentro de la VM (sin ISO ni dependencias)
     subprocess.run(["tar", "--exclude=.git", "--exclude=node_modules",
                     "--exclude=portal/data", "--exclude=portal/configs/generated",
+                    "--exclude=out",
                     "-czf", os.path.join(VM, "neubat.tar.gz"),
                     "-C", os.path.dirname(REPO), os.path.basename(REPO)],
                    check=True)
@@ -124,7 +126,7 @@ def phase1_install(token):
         "-cdrom", ISO,
         "-kernel", f"{VM}/vmlinuz-linux",
         "-initrd", f"{VM}/initramfs-linux.img",
-        "-append", f"archisobasedir=arch archisolabel={label} console=ttyS0",
+        "-append", f"archisobasedir=arch archisolabel={label} console=ttyS0 cow_spacesize=2G",
         # sin ip=dhcp: el hook net buscaría eth0 (ver docs/INSTALL.md §11)
     ])
     vm = pexpect.spawn(cmd[0], cmd[1:], encoding=None, timeout=300)
@@ -144,37 +146,70 @@ def phase1_install(token):
     vm.expect(rb"FILES_OK", timeout=60)
     vm.expect(rb"@archiso.{0,80}#")
 
-    # Ajustes del entorno live para red slirp lenta (no forman parte del repo)
-    vm.sendline(b"sed -i 's/--sort rate/--sort rate --download-timeout 30/' "
-                b"/root/neubat/scripts/20-archinstall.sh && "
-                b"sed -i 's/^ParallelDownloads.*/ParallelDownloads = 1/' /etc/pacman.conf "
-                b"&& echo TWEAKS_OK")
+    # Ajustes del entorno live para red slirp lenta (no forman parte del repo).
+    # Usamos un caché nginx local si está disponible en el host (puerto 8090).
+    cache_url = f"http://{GATEWAY}:8090/$repo/os/$arch"
+    tweaks_cmd = (
+        "systemctl stop reflector.service reflector.timer 2>/dev/null; "
+        "rm -f /etc/pacman.d/mirrorlist.pacnew /etc/pacman.d/mirrorlist.orig; "
+        f"echo 'Server = {cache_url}' > /etc/pacman.d/mirrorlist && "
+        "cat /etc/pacman.d/mirrorlist && "
+        "grep -q '^DisableDownloadTimeout' /etc/pacman.conf || "
+        "echo 'DisableDownloadTimeout' >> /etc/pacman.conf && "
+        f"sed -i 's|^reflector|#reflector|' /root/neubat/scripts/20-archinstall.sh && "
+        "sed -i 's/^ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf && "
+        "echo TWEAKS_OK"
+    )
+    vm.sendline(tweaks_cmd.encode())
     vm.expect(rb"TWEAKS_OK", timeout=30)
     vm.expect(rb"@archiso.{0,80}#")
 
     log("Lanzando neubat-install.sh (esto tarda: pacstrap ~1 GiB)")
-    install = (f"export NEUBAT_PORTAL_URL=http://{GATEWAY}:{PORTAL_PORT} NEUBAT_ASSUME_YES=true; "
-               f"bash /root/neubat/scripts/neubat-install.sh {token} {PROFILE} 2>&1 | "
-               f"tee /root/install.log; echo INSTALL_EXIT=${{PIPESTATUS[0]}}")
+    hmac_secret = os.environ.get("NEUBAT_HMAC_SECRET", "")
+    hmac_export = f"NEUBAT_HMAC_SECRET='{hmac_secret}' " if hmac_secret else ""
+    # El shell del live puede no ser bash; envolvemos en bash -c con pipefail
+    # para capturar correctamente el exit code del instalador.
+    inner = (
+        f"set -o pipefail; "
+        f"export {hmac_export}NEUBAT_PORTAL_URL=http://{GATEWAY}:{PORTAL_PORT} NEUBAT_ASSUME_YES=true; "
+        f"bash /root/neubat/scripts/neubat-install.sh {token} {PROFILE} 2>&1 | tee /root/install.log; "
+        f"echo INSTALL_EXIT=$?"
+    )
+    install = f"bash -c {shlex.quote(inner)}"
     vm.sendline(install.encode())
 
     # NOTA: el marcador usa patrones ASCII puros; «Ó» UTF-8 son 2 bytes y
     # rompería un patrón con un solo comodín.
     deadline = time.time() + 9600
     ok = False
+    install_failed_marker = None
     while time.time() < deadline:
+        # Timeout largo: pacstrap/npm pueden estar minutos sin emitir novedades
         i = vm.expect([rb"NEUBAT COMPLETADA", rb"INSTALL_EXIT=\d+",
-                       rb"\[ERROR\]", pexpect.TIMEOUT], timeout=120)
+                       rb"\[ERROR\]", pexpect.TIMEOUT], timeout=300)
         if i == 0:
             ok = True
             break
         if i == 1:
             ok = b"INSTALL_EXIT=0" in vm.after
+            install_failed_marker = vm.after
             break
         if i == 2:
             log("ERROR en la salida del instalador")
+            install_failed_marker = b"ERROR"
             break
         log("...instalación en curso...")
+
+    if not ok and install_failed_marker is not None:
+        log("Volcando logs del instalador para diagnóstico...")
+        for log_cmd in (
+            b"echo '--- /root/install.log ---'",
+            b"cat /root/install.log 2>/dev/null || echo 'NO /root/install.log'",
+            b"echo '--- /var/log/neubat-install.log ---'",
+            b"cat /var/log/neubat-install.log 2>/dev/null || echo 'NO /var/log/neubat-install.log'",
+        ):
+            vm.sendline(log_cmd)
+            vm.expect(rb"@archiso.{0,80}#", timeout=60)
 
     time.sleep(12)  # margen para el reboot del instalador
     vm.close(force=True)
@@ -188,48 +223,78 @@ def phase2_verify():
     vm = pexpect.spawn(qemu_cmd([])[0], qemu_cmd([])[1:], encoding=None, timeout=300)
     vm.logfile = CONSOLE
 
-    ssh = None
-    for attempt in range(16):
-        time.sleep(15)
-        log(f"Intento SSH {attempt + 1}/16")
-        s = pexpect.spawn("ssh", [
-            "-p", str(SSH_PORT), "-o", "StrictHostKeyChecking=no",
-            "-o", "UserKnownHostsFile=/dev/null", "-o", "PubkeyAuthentication=no",
-            "-o", "ConnectTimeout=10", "-o", "NumberOfPasswordPrompts=1",
-            "neubat@localhost"], encoding="utf-8", timeout=40)
-        if s.expect(["assword:", pexpect.EOF, pexpect.TIMEOUT]) == 0:
-            s.sendline("neubat")
-            if s.expect(["\\$", pexpect.TIMEOUT]) == 0:
-                ssh = s
-                break
-        s.close()
+    # Esperar a que el sistema arranque y SSH esté disponible. El marcador
+    # "SSH Access Available" aparece cuando sshd ha arrancado; si no, caemos
+    # al prompt de login en 3 minutos como salvaguarda.
+    log("Esperando arranque del sistema instalado...")
+    i = vm.expect([rb"SSH Access Available", rb"login:", pexpect.TIMEOUT], timeout=180)
+    if i == 2:
+        vm.close(force=True)
+        sys.exit("FALLO: la VM no arrancó en el tiempo esperado")
+    log("Sistema arrancado; intentando SSH")
 
-    if not ssh:
+    ssh_ok = False
+    ssh_cmd_base = [
+        "sshpass", "-p", "neubat",
+        "ssh",
+        "-p", str(SSH_PORT),
+        "-o", "StrictHostKeyChecking=no",
+        "-o", "UserKnownHostsFile=/dev/null",
+        "-o", "PasswordAuthentication=yes",
+        "-o", "PreferredAuthentications=password",
+        "-o", "ConnectTimeout=10",
+        "neubat@localhost",
+    ]
+
+    for attempt in range(20):
+        if attempt > 0:
+            time.sleep(5)
+        log(f"Intento SSH {attempt + 1}/20")
+        result = subprocess.run(
+            ssh_cmd_base + ["echo SSH_OK"],
+            capture_output=True, text=True, timeout=30)
+        if result.returncode == 0 and "SSH_OK" in result.stdout:
+            ssh_ok = True
+            break
+        log(f"  stderr: {result.stderr.strip()[:200]}")
+
+    if not ssh_ok:
         vm.close(force=True)
         sys.exit("FALLO: SSH no disponible en el sistema instalado")
 
     checks = [
         "cat /etc/hostname",
-        "sudo cat /etc/neubat-release",
+        "echo neubat | sudo -S cat /etc/neubat-release",
         "systemctl is-active neubat-portal NetworkManager sshd",
         "curl -sf --max-time 5 http://localhost:3000/api/health; echo",
         "cat ~/NEUBAT-URL.txt",
         "df -h / | tail -1",
         "lsblk -d -o NAME,SIZE,TRAN | grep nvme",
         "sudo -l -U $(whoami) | grep -q NOPASSWD && echo SUDO_INSEGURO || echo SUDO_OK",
-        "echo VERIFY_DONE",
+        "echo neubat | sudo -S cryptsetup status neubat_root | head -5",
+        "echo neubat | sudo -S cat /etc/crypttab",
+        "echo neubat | sudo -S snapper -c root list | head -5",
+        "echo neubat | sudo -S systemctl is-enabled snapper-timeline.timer snapper-cleanup.timer",
     ]
-    for c in checks:
-        ssh.sendline(c)
-        ssh.expect("\\$", timeout=40)
-        time.sleep(0.3)
 
-    ssh.expect("VERIFY_DONE", timeout=60)
+    log("Ejecutando verificaciones por SSH")
+    script = "; ".join([f"echo '--- {c} ---'; {c}" for c in checks])
+    script += "; echo VERIFY_DONE"
+    result = subprocess.run(
+        ssh_cmd_base + [script],
+        capture_output=True, text=True, timeout=120)
+
     print("\n===== SALIDA DE VERIFICACIÓN =====")
-    print(ssh.before)
+    print(result.stdout)
+    if result.stderr:
+        print("----- STDERR -----")
+        print(result.stderr)
     print("==================================")
-    ssh.sendline("exit")
-    ssh.close()
+
+    if result.returncode != 0 or "VERIFY_DONE" not in result.stdout:
+        vm.close(force=True)
+        sys.exit("FALLO: verificación SSH incompleta")
+
     vm.close(force=True)
     log("FASE 2 OK: sistema instalado verificado")
     print("RESULT=PASS")
@@ -237,6 +302,7 @@ def phase2_verify():
 
 def main():
     global CONSOLE
+    os.makedirs(VM, exist_ok=True)
     CONSOLE = open(os.path.join(VM, "console.log"), "wb")
     token = create_installation()
     prepare_workdir()

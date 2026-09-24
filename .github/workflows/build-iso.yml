@@ -28,19 +28,26 @@ jobs:
           # Eliminar prefijo 'v' si existe para el nombre del artefacto
           TAG="${TAG#v}"
           make build-iso TAG="${TAG}"
+          cd out
+          sha256sum "neubat-${TAG}-x86_64.iso" > "neubat-${TAG}-x86_64.iso.sha256"
+          cat "neubat-${TAG}-x86_64.iso.sha256"
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         with:
           name: neubat-iso
-          path: out/*.iso
+          path: |
+            out/*.iso
+            out/*.sha256
           retention-days: 7
 
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          files: out/*.iso
+          files: |
+            out/*.iso
+            out/*.sha256
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -8,6 +8,7 @@ export interface Installation {
   completed_at?: string;
   hostname?: string;
   error?: string;
+  user_id?: string | null;
 }
 
 export interface InstallRequest {
@@ -16,6 +17,10 @@ export interface InstallRequest {
   username?: string;
   desktop?: string;
   packages?: string[];
+  aur_packages?: string[];
+  locale?: string;
+  keyboard?: string;
+  timezone?: string;
   encryption?: {
     enabled: boolean;
     method?: 'keyfile' | 'passphrase';
@@ -38,4 +43,53 @@ export interface HealthResponse {
   status: string;
   version: string;
   timestamp: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  display_name: string;
+  created_at: string;
+  saved_configs?: SavedConfig[];
+  system_copies?: SystemCopy[];
+}
+
+export interface SavedConfig {
+  id: string;
+  name: string;
+  created_at: string;
+  profile: string;
+  hostname?: string;
+  username?: string;
+  desktop?: string;
+  packages?: string[];
+  aur_packages?: string[];
+  locale?: string;
+  keyboard?: string;
+  timezone?: string;
+}
+
+export interface SystemCopy {
+  id: string;
+  created_at: string;
+  packages: string[];
+  desktop: string;
+  locale?: string;
+  keyboard?: string;
+  timezone?: string;
+  status: string;
+}
+
+export interface Recommendation {
+  id: string;
+  title: string;
+  description: string;
+  profile: string;
+  desktop?: string;
+  packages?: string[];
+}
+
+export interface ReleaseInfo {
+  neubat: { version: string; iso_url: string; sha256_url: string };
+  arch: { iso_url: string; sha256_url: string };
 }

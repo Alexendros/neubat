@@ -8,15 +8,18 @@
 const express = require('express');
 const path = require('path');
 const db = require('./lib/db');
+const users = require('./lib/users');
 const install = require('./routes/install');
 const statusRoutes = require('./routes/status');
 const adminRoutes = require('./routes/admin');
+const authRoutes = require('./routes/auth');
+const accountRoutes = require('./routes/account');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.disable('x-powered-by');
-app.use(express.json({ limit: '64kb' }));
+app.use(express.json({ limit: '2mb' }));
 
 // Rate limiting simple en memoria (100 req / 15 min por IP)
 const requestCounts = new Map();
@@ -38,12 +41,19 @@ function apiLimiter(req, res, next) {
 }
 
 app.use('/api', apiLimiter);
+app.use('/api', users.optionalUser);
+app.use('/api/auth', authRoutes);
+app.use('/api/account', accountRoutes);
 app.use('/api', install.router);
 app.use('/api', statusRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/boot', install.bootRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Live NEUBAT para netboot (si existe out/live o NEUBAT_LIVE_DIR)
+const LIVE_DIR = process.env.NEUBAT_LIVE_DIR || path.join(__dirname, '..', 'out', 'live');
+app.use('/live', express.static(LIVE_DIR));
 
 // 404 JSON para rutas API no definidas
 app.use('/api', (req, res) => {
@@ -57,6 +67,7 @@ app.get('*', (req, res) => {
 
 async function start() {
     await db.initStorage();
+    await users.ensureUsersStore();
     app.listen(PORT, () => {
         console.log(`
     ╔══════════════════════════════════════════════════════════════╗
@@ -78,4 +89,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-

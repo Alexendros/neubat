@@ -109,20 +109,22 @@ make release
 
 ### 5.1 Crear la instalación
 
-Desde la web (`http://<portal>/`) o por API:
+Desde la web (`http://<portal>/configurar`) o por API:
 
 ```bash
 curl -X POST http://<portal>:3000/api/install \
   -H 'Content-Type: application/json' \
-  -d '{"profile":"production","hostname":"mi-equipo"}'
+  -d '{"profile":"production","hostname":"mi-equipo","desktop":"hyprland"}'
 ```
 
 Respuesta: `token`, `config_url`, `boot_url`.
 
+Cuenta de usuario: registro en `/cuenta`. Absorción del sistema actual: genera un código en la cuenta y ejecuta `scripts/neubat-absorb.sh --code … --portal …`.
+
 ### 5.2 Arrancar la máquina destino
 
-- **Por red (recomendado):** encadenar iPXE a `http://<portal>:3000/boot/<token>`, o usar `netboot/ipxe/neubat.ipxe` (menú interactivo).
-- **ISO híbrida autoinstalable:** descarga `neubat-1.0.0-x86_64.iso` desde la [release v1.0.0](https://github.com/Alexendros/neubat/releases/tag/v1.0.0) y arranca la máquina pasando el token por kernel cmdline:
+- **Por red (recomendado):** encadenar iPXE a `http://<portal>:3000/boot/<token>`. El script incluye `neubat_token`, `neubat_profile` y `neubat_portal_url`. Para cero toques, publica el live NEUBAT en `NEUBAT_LIVE_DIR` (servido en `/live`) y define `NEUBAT_USE_LIVE=1` o `NEUBAT_LIVE_BASE`. Sin live, el mirror Arch arranca pero requiere ejecutar el instalador a mano o usar la ISO NEUBAT.
+- **ISO híbrida autoinstalable:** en `/descargar` el portal verifica SHA-256 antes de guardar. También desde la [release](https://github.com/Alexendros/neubat/releases) con el `.sha256` generado por CI. Arranque:
 
   ```
   neubat_token=<token> neubat_profile=production neubat_portal_url=http://<portal>:3000
@@ -148,19 +150,21 @@ bash scripts/neubat-install.sh <token> [perfil]
 |------|--------|--------|
 | 0 | `00-preinstall.sh` | root, Internet, UEFI, herramientas live |
 | 0b | `20-archinstall.sh` | Descarga config por token o usa perfil local |
-| 1 | `10-partition.sh` | GPT: EFI 512M + raíz btrfs + home btrfs + swap 4G |
+| 1 | `10-partition.sh` | GPT: EFI 1 GiB + raíz btrfs + home btrfs + swap 4G |
 | 2 | `20-archinstall.sh` | Mirrors (reflector) + pacstrap + fstab |
-| 3 | `30-postinstall.sh` | chroot: locale, usuarios, GRUB, yay, `/etc/neubat-release` |
+| 3 | `30-postinstall.sh` | chroot: locale, usuarios, systemd-boot, yay, `/etc/neubat-release` |
 | 4 | `30-postinstall.sh` | Desktop y paquetes/servicios de la configuración |
-| 5 | `40-portal-deploy.sh` | Portal local + `~/NEUBAT-URL.txt` |
-| 6 | maestro | Notificación al portal, resumen y reinicio |
+| 5 | `35-snapper.sh` | Snapper + snap-pac si `snapshots.enabled` |
+| 6 | `40-portal-deploy.sh` | Portal local + `~/NEUBAT-URL.txt` |
+| 7 | `50-firstboot-ansible.sh` | Ansible first-boot |
+| 8 | maestro | Notificación al portal, resumen y reinicio |
 
 ## 6. Esquema de particionado
 
 | Partición | Tamaño | FS | Montaje |
 |-----------|--------|-----|---------|
-| p1 (ESP) | 512 MiB | FAT32 | `/boot/efi` |
-| p2 (raíz) | 30 GiB (20 GiB si disco < 64 GiB) | btrfs (zstd, noatime) | `/` |
+| p1 (ESP) | 1 GiB | FAT32 | `/boot` |
+| p2 (raíz) | 19–29 GiB (según tamaño del disco) | btrfs (zstd, noatime) | `/` |
 | p3 (home) | resto − 4 GiB | btrfs (zstd, noatime) | `/home` |
 | p4 (swap) | 4 GiB | swap | — |
 
@@ -168,7 +172,7 @@ Los nombres de partición se resuelven con `part_name()` (soporta `/dev/sda1` y 
 
 ## 6.1 Cifrado de disco LUKS (Fase 6)
 
-NEUBAT puede cifrar las particiones de **raíz** y **home** con LUKS2. La partición EFI (`/boot/efi`) permanece descifrada porque el firmware UEFI debe poder leer el cargador de arranque.
+NEUBAT puede cifrar las particiones de **raíz** y **home** con LUKS2. La partición EFI (`/boot`) permanece descifrada porque el firmware UEFI debe poder leer el cargador de arranque (systemd-boot).
 
 ### Modos de arranque
 
@@ -215,8 +219,8 @@ Cuando uses `method: "keyfile"`, rota la llave tras el primer arranque:
 ```bash
 # Añade una passphrase y elimina el keyfile del slot 0
 sudo cryptsetup luksAddKey /dev/nvme0n1p2
-sudo cryptsetup luksRemoveKey /dev/nvme0n1p2 /boot/luks-keyfile
-sudo rm /boot/luks-keyfile
+sudo cryptsetup luksRemoveKey /dev/nvme0n1p2 /etc/cryptsetup-keys.d/neubat_root.key
+sudo rm /etc/cryptsetup-keys.d/neubat_root.key /etc/cryptsetup-keys.d/neubat_home.key
 ```
 
 Para TPM2 o FIDO2, consulta `systemd-cryptenroll` (fuera del alcance del MVP).

@@ -51,7 +51,7 @@ export function AdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.installations();
+      const data = await api.adminInstallations(token);
       setInstallations(data);
       setLoggedIn(true);
     } catch (err) {
@@ -65,7 +65,7 @@ export function AdminPage() {
   async function refresh() {
     setLoading(true);
     try {
-      const data = await api.installations();
+      const data = await api.adminInstallations(token);
       setInstallations(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error cargando datos');

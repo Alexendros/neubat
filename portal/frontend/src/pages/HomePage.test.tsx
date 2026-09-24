@@ -3,40 +3,44 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { HomePage } from './HomePage';
+import { AuthProvider } from '@/lib/auth';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
-  return <BrowserRouter>{children}</BrowserRouter>;
+  return (
+    <AuthProvider>
+      <BrowserRouter>{children}</BrowserRouter>
+    </AuthProvider>
+  );
 }
 
 describe('HomePage', () => {
   beforeEach(() => {
-    globalThis.fetch = vi.fn();
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Sin sesión' }),
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('renderiza el formulario y la lista de instalaciones', async () => {
-    (globalThis.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [
-        { token: 'abc123', profile: 'base', status: 'pending', created_at: new Date().toISOString() },
-      ],
-    });
-
+  it('renderiza el formulario de instalación', () => {
     render(<HomePage />, { wrapper: Wrapper });
 
     expect(screen.getByRole('button', { name: /Generar instalación/i })).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByText('base')).toBeInTheDocument();
-    });
+    expect(screen.getByRole('heading', { name: /Nueva instalación/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Instalaciones recientes/i)).not.toBeInTheDocument();
   });
 
   it('crea una instalación y muestra resultados', async () => {
-    (globalThis.fetch as any)
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+    (globalThis.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Sin sesión' }),
+      })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -47,8 +51,7 @@ describe('HomePage', () => {
           boot_url: '/boot/tokentest',
           message: 'Creada',
         }),
-      })
-      .mockResolvedValueOnce({ ok: true, json: async () => [] });
+      });
 
     render(<HomePage />, { wrapper: Wrapper });
 
@@ -60,10 +63,10 @@ describe('HomePage', () => {
       expect(screen.getByText(/boot\/tokentest/i)).toBeInTheDocument();
     });
 
-    // Verifica que el POST incluye encryption y snapshots por defecto
-    const calls = (globalThis.fetch as any).mock.calls;
-    const postCall = calls.find((c: any[]) => c[1]?.method === 'POST');
-    const body = JSON.parse(postCall[1].body);
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const postCall = calls.find((c: unknown[]) => (c[1] as RequestInit | undefined)?.method === 'POST');
+    expect(postCall).toBeTruthy();
+    const body = JSON.parse((postCall![1] as RequestInit).body as string);
     expect(body.encryption).toEqual({ enabled: true, method: 'keyfile' });
     expect(body.snapshots).toEqual({ enabled: true });
   });

@@ -112,7 +112,8 @@ finalize_installation() {
 # -----------------------------------------------------------------------------
 
 main() {
-    clear
+    # No limpiar la pantalla en salida no interactiva (consola serie/VM)
+    [[ -t 1 ]] && clear || true
     echo "═══════════════════════════════════════════════════════════════"
     echo "   NEUBAT v${NEUBAT_VERSION} - Instalador Desatendido Arch Linux   "
     echo "═══════════════════════════════════════════════════════════════"

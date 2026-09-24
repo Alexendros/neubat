@@ -35,13 +35,13 @@
 
 | Capa | Componente | Tecnología | Función |
 |------|------------|------------|---------|
-| **Presentación** | Portal web | Node.js + Express, SPA vanilla | Interfaz usuario, generación de configs |
+| **Presentación** | Portal web | Node.js + Express, SPA React + Vite + shadcn/ui | Interfaz usuario, generación de configs |
 | **Persistencia** | DB JSON | `portal/data/installations.json` | Registro y seguimiento de instalaciones |
-| **Distribución** | Arranque por red | iPXE + HTTP (mirror Arch) | Arranque sin medios físicos |
+| **Distribución** | Arranque por red | iPXE + HTTP (mirror Arch / live NEUBAT) | Arranque sin medios físicos |
 | **Fallback** | GRUB loopback | GRUB2 + ISO en disco | Arranque de ISO sin reescribir USB |
-| **Instalación** | Script maestro | Bash + pacstrap | Sistema base desatendido |
-| **Configuración** | Módulos de fases | Bash (00–40) + JSON | Personalización por token |
-| **Post-instalación** | Portal local | systemd + Node.js | Portal en el sistema instalado, URL única |
+| **Instalación** | Script maestro | Bash + archinstall (cuando disponible) + pacstrap | Sistema base desatendido |
+| **Configuración** | Módulos de fases | Bash (00–50) + JSON | Personalización por token |
+| **Post-instalación** | Portal local + Ansible | systemd + Node.js + Ansible | Portal en el sistema instalado, URL única |
 
 ## Secuencia de una instalación
 

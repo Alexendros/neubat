@@ -4,10 +4,15 @@
 # Módulo cargado por neubat-install.sh (no ejecutar directamente)
 #
 # Esquema resultante:
-#   p1  EFI    512 MiB   FAT32   /boot/efi
-#   p2  raíz   20-30 GiB btrfs   /
-#   p3  home   resto-4G  btrfs   /home
-#   p4  swap   4 GiB     swap
+#   p1  EFI/boot  1 GiB   FAT32   /boot  (también /boot/efi para UEFI)
+#   p2  raíz      19-29 GiB btrfs   /
+#   p3  home      resto-4G  btrfs   /home
+#   p4  swap      4 GiB     swap
+#
+# La partición EFI se monta directamente en /boot para simplificar el arranque:
+# GRUB/systemd-boot leen kernel, initramfs y su configuración desde una única
+# partición FAT32 accesible sin cifrado. /boot/efi es simplemente el subdirectorio
+# EFI dentro de esa partición.
 #
 # Cuando encryption.enabled es true, p2/p3 se convierten a contenedores
 # LUKS y el sistema de archivos btrfs vive dentro de /dev/mapper/neubat_*.
@@ -61,7 +66,7 @@ partition_disk() {
     local fs_root="${p_root}" fs_home="${p_home}"
 
     # Tamaños (en GiB) calculados con awk (bc no está garantizado en el ISO)
-    local disk_gib swap_gib=4 root_gib home_end_gib
+    local disk_gib swap_gib=4 efi_gib=1 root_gib home_end_gib
     disk_gib=$(blockdev --getsize64 "${DISK}" | awk '{printf "%d", $1/1073741824}')
 
     if (( disk_gib < 32 )); then
@@ -69,13 +74,17 @@ partition_disk() {
     fi
 
     if (( disk_gib < 64 )); then
-        root_gib=20
+        root_gib=19
     else
-        root_gib=30
+        root_gib=29
     fi
     home_end_gib=$(( disk_gib - swap_gib ))
 
-    log "Disco: ${disk_gib} GiB | raíz: ${root_gib} GiB | swap: ${swap_gib} GiB"
+    # Límite en MiB para la partición EFI/boot (1 GiB = 1024 MiB)
+    local efi_end_mib=1025
+    local root_end_gib=$(( efi_gib + root_gib ))
+
+    log "Disco: ${disk_gib} GiB | EFI/boot: ${efi_gib} GiB | raíz: ${root_gib} GiB | swap: ${swap_gib} GiB"
 
     # Limpiar sector de arranque y firmas previas
     log "Limpiando tabla de particiones previa..."
@@ -86,18 +95,18 @@ partition_disk() {
     log "Creando tabla de particiones GPT..."
     parted -s "${DISK}" mklabel gpt
 
-    # p1: EFI (512 MiB)
-    log "Creando partición EFI..."
-    parted -s "${DISK}" mkpart primary fat32 1MiB 513MiB
+    # p1: EFI + /boot (1 GiB, FAT32)
+    log "Creando partición EFI/boot (${efi_gib} GiB)..."
+    parted -s "${DISK}" mkpart primary fat32 1MiB "${efi_end_mib}MiB"
     parted -s "${DISK}" set 1 esp on
 
     # p2: raíz btrfs
     log "Creando partición raíz (${root_gib} GiB)..."
-    parted -s "${DISK}" mkpart primary btrfs 513MiB "${root_gib}GiB"
+    parted -s "${DISK}" mkpart primary btrfs "${efi_end_mib}MiB" "${root_end_gib}GiB"
 
     # p3: home btrfs (hasta disco - swap)
     log "Creando partición home (hasta ${home_end_gib} GiB)..."
-    parted -s "${DISK}" mkpart primary btrfs "${root_gib}GiB" "${home_end_gib}GiB"
+    parted -s "${DISK}" mkpart primary btrfs "${root_end_gib}GiB" "${home_end_gib}GiB"
 
     # p4: swap
     log "Creando partición swap (${swap_gib} GiB)..."
@@ -107,7 +116,7 @@ partition_disk() {
     partprobe "${DISK}" || true
     sleep 2
 
-    # Cifrado opcional de raíz y home
+    # Cifrado opcional de raíz y home (EFI/boot se mantiene en claro)
     if [[ "${ENCRYPTION_ENABLED:-false}" == "true" ]]; then
         if ! command -v cryptsetup &>/dev/null; then
             error "cryptsetup no está disponible en el entorno live; necesario para LUKS"
@@ -130,11 +139,14 @@ partition_disk() {
     mkswap "${p_swap}"
     swapon "${p_swap}"
 
-    # Montaje con opciones optimizadas para SSD
+    # Montaje: /boot es la partición EFI; /boot/efi es un subdirectorio.
+    # Esto simplifica el arranque porque GRUB lee /boot/grub desde la misma
+    # partición FAT32 donde vive el binario EFI.
     log "Montando particiones..."
     mount -o noatime,compress=zstd,space_cache=v2 "${fs_root}" /mnt
-    mkdir -p /mnt/boot/efi /mnt/home
-    mount "${p_efi}" /mnt/boot/efi
+    mkdir -p /mnt/boot /mnt/home
+    mount "${p_efi}" /mnt/boot
+    mkdir -p /mnt/boot/efi
     mount -o noatime,compress=zstd,space_cache=v2 "${fs_home}" /mnt/home
 
     success "Particionado completado"

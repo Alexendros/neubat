@@ -69,4 +69,58 @@ describe('lib/db', () => {
         expect(sig1).toMatch(/^[0-9a-f]{64}$/);
         expect(sig1).toBe(sig2);
     });
+
+    test('signingPayload incluye encryption y snapshots canónicos', () => {
+        const base = {
+            token: 'tok',
+            machine_id: 'mid',
+            hostname: 'host',
+            username: 'user',
+            desktop: 'none',
+            password: 'pass',
+            disk: '/dev/sda',
+            timezone: 'UTC',
+            locale: 'en_US.UTF-8',
+            keyboard: 'us',
+            packages: ['b', 'a'],
+            services: ['sshd']
+        };
+        const without = db.signingPayload(base);
+        expect(without.endsWith('||')).toBe(true);
+
+        const withEnc = db.signingPayload({
+            ...base,
+            encryption: { method: 'keyfile', enabled: true },
+            snapshots: { enabled: true }
+        });
+        expect(withEnc).toContain('enabled=true,method=keyfile');
+        expect(withEnc).toContain('enabled=true');
+        expect(withEnc).not.toBe(without);
+    });
+
+    test('alterar encryption invalida la firma HMAC', () => {
+        process.env.NEUBAT_HMAC_SECRET = 'test-secret';
+        const config = {
+            token: 'tok',
+            machine_id: 'mid',
+            hostname: 'host',
+            username: 'user',
+            desktop: 'none',
+            password: 'pass',
+            disk: '/dev/sda',
+            timezone: 'UTC',
+            locale: 'en_US.UTF-8',
+            keyboard: 'us',
+            packages: ['a'],
+            services: [],
+            encryption: { enabled: true, method: 'keyfile' },
+            snapshots: { enabled: true }
+        };
+        const sig = db.signConfig(config);
+        const tampered = {
+            ...config,
+            encryption: { enabled: true, method: 'passphrase' }
+        };
+        expect(db.signConfig(tampered)).not.toBe(sig);
+    });
 });

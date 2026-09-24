@@ -1,0 +1,10 @@
+# GitGuardian — plantillas de instalación (no son secretos de producción)
+version: 2
+path_exclusions:
+  - configs/*.json
+secret_exclusions:
+  - name: Install profile placeholders
+    matches:
+      - name: Generic Password
+        paths:
+          - configs/

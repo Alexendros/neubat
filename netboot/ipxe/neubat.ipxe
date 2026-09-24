@@ -8,6 +8,12 @@
 
 dhcp || shell
 
+# Portal público (sobrescribir con NEUBAT_PUBLIC_URL en el despliegue)
+isset portal-url || set portal-url http://portal.neubat.local:3000
+# Live NEUBAT con hook (recomendado). Si no hay live local, usar mirror Arch.
+isset neubat-live || set neubat-live ${portal-url}/live
+isset arch-mirror || set arch-mirror https://geo.mirror.pkgbuild.com/iso/latest
+
 :menu
 menu NEUBAT - Instalacion por Red
 item --gap -- ---------------- Opciones ----------------
@@ -32,10 +38,15 @@ set neubat_profile minimal
 goto boot
 
 :boot
-# Kernel y initramfs oficiales de Arch (mirror geolocalizado)
-set base-url https://geo.mirror.pkgbuild.com/iso/latest
-kernel ${base-url}/arch/boot/x86_64/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=${base-url}/arch/ ip=dhcp net.ifnames=0 console=ttyS0 neubat_profile=${neubat_profile}
-initrd ${base-url}/arch/boot/x86_64/initramfs-linux.img
+# Preferir live NEUBAT (incluye neubat-autoinstall). Fallback: mirror Arch.
+kernel ${neubat-live}/boot/x86_64/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=${neubat-live}/ ip=dhcp net.ifnames=0 console=ttyS0 neubat_profile=${neubat_profile} neubat_portal_url=${portal-url} || goto arch_fallback
+initrd ${neubat-live}/boot/x86_64/initramfs-linux.img || goto arch_fallback
+boot || goto arch_fallback
+
+:arch_fallback
+echo Live NEUBAT no disponible; usando mirror Arch (instalacion manual o con token)...
+kernel ${arch-mirror}/arch/boot/x86_64/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=${arch-mirror}/arch/ ip=dhcp net.ifnames=0 console=ttyS0 neubat_profile=${neubat_profile} neubat_portal_url=${portal-url}
+initrd ${arch-mirror}/arch/boot/x86_64/initramfs-linux.img
 boot || goto failed
 
 :failed
