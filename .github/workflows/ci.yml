@@ -1,14 +1,23 @@
 name: CI
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  validate:
+  quality:
+    name: quality
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -17,17 +26,35 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: portal/package-lock.json
+          cache-dependency-path: |
+            portal/package-lock.json
+            portal/frontend/package-lock.json
 
       - name: Install portal dependencies
         run: cd portal && npm ci
+
+      - name: Install frontend dependencies
+        run: cd portal/frontend && npm ci
+
+      - name: Install shellcheck and Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck ansible
+          pip3 install ansible-lint --break-system-packages || pip3 install ansible-lint
 
       - name: Validate scripts and configs
         run: make validate
 
+      - name: Lint shell and frontend
+        run: make lint
+
+      - name: Validate Ansible
+        run: make test-ansible
+
   test:
+    name: test
     runs-on: ubuntu-latest
-    needs: validate
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -36,55 +63,32 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: portal/package-lock.json
+          cache-dependency-path: |
+            portal/package-lock.json
+            portal/frontend/package-lock.json
 
       - name: Install portal dependencies
         run: cd portal && npm ci
 
-      - name: Run portal tests
-        run: make test
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
-
-      - name: Run shellcheck
-        run: make lint
-
-  test-bash:
-    runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - uses: actions/checkout@v4
+      - name: Install frontend dependencies
+        run: cd portal/frontend && npm ci
 
       - name: Install bats
         run: sudo apt-get update && sudo apt-get install -y bats
 
+      - name: Run portal tests
+        run: make test
+
+      - name: Run frontend tests
+        run: cd portal/frontend && npm test
+
       - name: Run bats tests
         run: make test-bash
 
-  ansible:
+  build:
+    name: build
     runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Ansible
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible
-          pip3 install ansible-lint --break-system-packages || pip3 install ansible-lint
-
-      - name: Validate Ansible
-        run: make test-ansible
-
-  test-frontend:
-    runs-on: ubuntu-latest
-    needs: validate
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -98,8 +102,44 @@ jobs:
       - name: Install frontend dependencies
         run: cd portal/frontend && npm ci
 
-      - name: Run frontend tests
-        run: cd portal/frontend && npm test
+      - name: Build frontend for production
+        run: make build-frontend
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neubat-frontend
+          path: |
+            portal/public/index.html
+            portal/public/assets/
+            portal/public/favicon.svg
+          if-no-files-found: error
+          retention-days: 7
+
+  smoke:
+    name: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            portal/package-lock.json
+            portal/frontend/package-lock.json
+
+      - name: Install portal dependencies
+        run: cd portal && npm ci
+
+      - name: API smoke (health + install)
+        run: make smoke
+
+      - name: Install frontend dependencies
+        run: cd portal/frontend && npm ci
 
       - name: Install axe-core for a11y smoke
         run: cd portal/frontend && npm install --no-save axe-core jsdom
@@ -134,22 +174,3 @@ jobs:
             })
             .catch((err) => { console.error(err); process.exit(1); });
           NODE
-
-  build-frontend:
-    runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: portal/frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        run: cd portal/frontend && npm ci
-
-      - name: Build frontend for production
-        run: make build-frontend

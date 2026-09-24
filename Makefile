@@ -1,7 +1,7 @@
 # NEUBAT - Makefile
 TAG ?= 1.0.0
 
-.PHONY: portal install-deps install-deps-frontend build-frontend validate lint test test-smoke test-vm test-bash test-ansible validate-ansible lint-ansible test-frontend build-iso release
+.PHONY: portal install-deps install-deps-frontend build-frontend validate lint test smoke test-smoke test-vm test-bash test-ansible validate-ansible lint-ansible test-frontend build-iso release
 
 install-deps:
 	cd portal && npm install
@@ -26,19 +26,33 @@ validate:
 
 lint:
 	@command -v shellcheck >/dev/null 2>&1 && shellcheck -x scripts/*.sh || echo "shellcheck no instalado; omitido"
+	@if [ -d portal/frontend/node_modules ]; then cd portal/frontend && npm run lint; else echo "oxlint omitido (sin node_modules del frontend)"; fi
 
 test:
 	cd portal && npm test
 
-test-smoke: validate
-	@cd portal && PORT=3100 timeout 8 node server.js & \
-	sleep 2; \
-	curl -sf http://localhost:3100/api/health && echo "OK /api/health"; \
-	curl -sf -X POST http://localhost:3100/api/install -H 'Content-Type: application/json' \
-		-d '{"profile":"base","hostname":"neubat-test"}' && echo "OK /api/install"; \
-	wait || true
+# Fachada canónica: health + POST /api/install (falla si el portal no responde)
+smoke:
+	@cd portal && \
+	PORT=3100 node server.js >/tmp/neubat-smoke.log 2>&1 & pid=$$!; \
+	ok=0; \
+	for i in 1 2 3 4 5 6 7 8 9 10 11 12; do \
+		if curl -sf http://127.0.0.1:3100/api/health >/dev/null; then ok=1; break; fi; \
+		sleep 0.5; \
+	done; \
+	if [ $$ok -ne 1 ]; then echo "smoke: /api/health no respondió"; cat /tmp/neubat-smoke.log; kill $$pid 2>/dev/null || true; exit 1; fi; \
+	curl -sf http://127.0.0.1:3100/api/health && echo " OK /api/health"; \
+	curl -sf -X POST http://127.0.0.1:3100/api/install -H 'Content-Type: application/json' \
+		-d '{"profile":"base","hostname":"neubat-test"}' && echo " OK /api/install"; \
+	status=$$?; \
+	kill $$pid 2>/dev/null || true; \
+	wait $$pid 2>/dev/null || true; \
+	exit $$status
 
-# Prueba end-to-end en VM QEMU/NVMe (larga: ~40 min). Ver tests/vm/README.md
+# Alias conservado
+test-smoke: smoke
+
+# Prueba end-to-end en VM QEMU/NVMe (larga: ~40 min, opt-in). Ver tests/vm/README.md
 test-vm:
 	python3 tests/vm/neubat_vm_test.py
 
@@ -57,7 +71,7 @@ test-ansible: validate-ansible lint-ansible
 test-frontend: install-deps-frontend
 	cd portal/frontend && npm test
 
-# Construir ISO híbrida con autoinstalación (requiere Docker)
+# Construir ISO híbrida con autoinstalación (requiere Docker; opt-in)
 build-iso:
 	bash scripts/build-iso.sh "$(TAG)"
 
