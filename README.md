@@ -1,5 +1,11 @@
 # NEUBAT
 
+### Propósito de este documento
+
+- **Objetivos:** Presentar el producto, el quickstart y los avisos de seguridad (destrucción de disco, HMAC, LUKS) para un operador o contribuidor nuevo.
+- **Estructura:** Concepto → objetivos → características → árbol → quickstart → documentación → ISO → admin → seguridad → licencia.
+- **Contenido a integrar según contexto:** Conserva el stack (Express + React + Bash + Ansible + iPXE). No copies un README de SaaS. Contratos operativos en [AGENTS.md](AGENTS.md) y [ARCHITECTURE.md](ARCHITECTURE.md).
+
 **Instalación desatendida de Arch Linux por red (iPXE), con portal web responsive que genera URLs únicas de configuración.**
 
 Versión: 1.0.0 · Arquitectura: x86_64 · Sistema base: Arch Linux (rolling release) · Licencia: GPL-3.0
@@ -77,12 +83,14 @@ neubat/
 ├── tests/
 │   └── vm/                    # Prueba end-to-end QEMU/NVMe (neubat_vm_test.py)
 └── docs/
-    ├── INSTALL.md             # Documento maestro de instalación y despliegue
-    ├── ARCHITECTURE.md        # Arquitectura técnica y diagrama de flujo
-    ├── ROADMAP.md             # Próximos pasos
+    ├── architecture/          # Overview + ADRs
+    ├── guides/                # Instalación, desarrollo, Ansible, paquetes
+    ├── runbooks/              # Portal, ISO, CI
     ├── RELEASE-v1.0.0.md      # Notas de la release v1.0.0
     └── assets/                # Capturas de pantalla
 ```
+
+Fachada local: `make lint`, `make test`, `make smoke`, `make validate`.
 
 ## Quickstart
 
@@ -150,9 +158,11 @@ bash scripts/validate-install.sh
 
 ## Documentación
 
-- [docs/INSTALL.md](docs/INSTALL.md) — documento maestro completo
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — diagrama de flujo y componentes
-- [docs/ROADMAP.md](docs/ROADMAP.md) — próximos pasos
+- [docs/README.md](docs/README.md) — índice
+- [docs/guides/install.md](docs/guides/install.md) — documento maestro de instalación
+- [ARCHITECTURE.md](ARCHITECTURE.md) — capas y contratos
+- [docs/guides/roadmap.md](docs/guides/roadmap.md) — próximos pasos
+- [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [AGENTS.md](AGENTS.md)
 
 ## Descarga de la ISO
 

@@ -1,5 +1,11 @@
 # Proxy caché de paquetes pacman (opcional)
 
+### Propósito de este documento
+
+- **Objetivos:** Explicar el perfil Docker opcional de caché pacman.
+- **Estructura:** Motivo → arranque → uso con el portal.
+- **Contenido a integrar según contexto:** No es required de CI. No copies un proxy de otro mirror.
+
 Acelera instalaciones NEUBAT repetidas en VMs o redes locales: nginx cachea los
 paquetes de un mirror upstream (los `.pkg.tar.*` son inmutables por versión) y
 los sirve a velocidad de red local.

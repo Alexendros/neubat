@@ -1,5 +1,11 @@
 # Prueba end-to-end en VM (QEMU/KVM + NVMe virtual)
 
+### Propósito de este documento
+
+- **Objetivos:** Documentar la e2e QEMU/NVMe como **opt-in** (no required de CI).
+- **Estructura:** Requisitos → uso → variables.
+- **Contenido a integrar según contexto:** No conviertas este flujo en job required. ~40 min, necesita KVM.
+
 `neubat_vm_test.py` reproduce la validación realizada el 19-sep-2026: instalación
 desatendida completa del perfil elegido sobre un disco NVMe virtual y
 verificación SSH del sistema instalado.

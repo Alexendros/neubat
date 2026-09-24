@@ -2,6 +2,10 @@
 node_modules/
 npm-debug.log*
 
+# Secretos locales (usa .env.example)
+.env
+.env.local
+
 # Datos en runtime del portal
 portal/data/
 portal/configs/generated/

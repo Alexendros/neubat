@@ -1,5 +1,11 @@
 # NEUBAT v1.0.0 — Release Notes
 
+### Propósito de este documento
+
+- **Objetivos:** Conservar las notas de la release pública v1.0.0 (ISO, portal Docker, panel admin).
+- **Estructura:** Novedades → artefactos → uso de la ISO → seguridad → checksum.
+- **Contenido a integrar según contexto:** No reescribas este histórico; las entradas nuevas van a [CHANGELOG.md](../CHANGELOG.md).
+
 **Fecha:** 19 de septiembre de 2026
 
 ## Novedades
