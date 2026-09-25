@@ -203,7 +203,7 @@ NEUBAT puede cifrar las particiones de **raíz** y **home** con LUKS2. La partic
 
 - `enabled`: activa/desactiva LUKS.
 - `method`: `keyfile` (desatendido) o `passphrase` (interactivo).
-- `passphrase`: se usa para formatear el contenedor cuando no hay keyfile; también puede usarse para añadir frases adicionales tras la instalación.
+- `passphrase`: se usa para formatear el contenedor cuando no hay keyfile; también puede usarse para añadir frases adicionales tras la instalación. El valor `neubat` se rechaza mientras `enabled` sea verdadero, igual que la contraseña de usuario `neubat`. Para una VM de prueba: `NEUBAT_ALLOW_DEFAULT_SECRETS=1`.
 - `cipher` / `key_size`: parámetros de `cryptsetup luksFormat` (defecto `aes-xts-plain64` / 512).
 
 ### Desde la API
@@ -214,6 +214,7 @@ curl -X POST http://<portal>:3000/api/install \
   -d '{
     "profile": "production",
     "hostname": "mi-equipo",
+    "password": "UnaClaveDeUsuario",
     "encryption": { "enabled": true, "method": "passphrase", "passphrase": "MiFraseSegura" }
   }'
 ```

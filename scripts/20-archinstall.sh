@@ -81,6 +81,10 @@ fetch_configuration() {
     # Si la config viene de un perfil local (sin portal) y no hay firma, se omite.
     verify_config_signature "${NEUBAT_CONFIG_FILE}"
 
+    if ! reject_public_luks_secret "${PASSWORD}" "${ENCRYPTION_ENABLED}" "${LUKS_PASSPHRASE}"; then
+        error "Cifrado activo con la contraseña o la passphrase de ejemplo 'neubat'. Elige otra. En un laboratorio: NEUBAT_ALLOW_DEFAULT_SECRETS=1."
+    fi
+
     if [[ "${PASSWORD}" == "neubat" ]]; then
         warning "Contraseña por defecto en uso. Cámbiala en el primer acceso."
     fi

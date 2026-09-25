@@ -11,6 +11,10 @@ Las versiones de producto (`1.0.x`) no se generan con semantic-release.
 - `SUPPORT.md` y workflow `security` (actionlint semanal y en cambios de `.github/`).
 - Pruebas de cuenta, sesión y absorción para que el gate de cobertura del portal se ejecute de verdad.
 
+### Security
+
+- El portal y el instalador rechazan un disco cifrado cuya contraseña o passphrase LUKS sea `neubat`. Laboratorio: `NEUBAT_ALLOW_DEFAULT_SECRETS=1`.
+
 ### Changed
 
 - Los jobs de CI quedan encadenados: `quality` → `test` → `build` → `smoke`.

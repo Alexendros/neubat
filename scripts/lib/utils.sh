@@ -57,3 +57,15 @@ else:
     print(val)
 PYEOF
 }
+
+# Cifrado con el secreto de ejemplo del repositorio. 0 = se puede continuar.
+# NEUBAT_ALLOW_DEFAULT_SECRETS=1 solo para un laboratorio que asume el riesgo.
+reject_public_luks_secret() {
+    local password="$1" enabled="$2" passphrase="$3"
+    [[ "${NEUBAT_ALLOW_DEFAULT_SECRETS:-}" == "1" ]] && return 0
+    [[ "${enabled}" == "true" ]] || return 0
+    if [[ "${password}" == "neubat" || "${passphrase}" == "neubat" ]]; then
+        return 1
+    fi
+    return 0
+}

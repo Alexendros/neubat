@@ -86,6 +86,7 @@ export function ConfigurePage() {
       profile: profile || 'base',
       hostname: (data.get('hostname') as string) || undefined,
       username: (data.get('username') as string) || undefined,
+      password: (data.get('password') as string) || undefined,
       desktop,
       packages: [...new Set([...selectedPackages, ...extra])],
       locale: (data.get('locale') as string) || 'es_ES.UTF-8',
@@ -93,9 +94,11 @@ export function ConfigurePage() {
       timezone: (data.get('timezone') as string) || 'Europe/Madrid',
     };
     if (enableEncryption) {
+      const passphrase = (data.get('luks_passphrase') as string) || undefined;
       body.encryption = {
         enabled: true,
         method: encryptionMethod === 'prompt' ? 'interactive' : 'keyfile',
+        ...(passphrase ? { passphrase } : {}),
       };
     }
     if (enableSnapshots) body.snapshots = { enabled: true };
@@ -128,10 +131,15 @@ export function ConfigurePage() {
           setError('La instalación quedó en el portal, pero no se pudo guardar en la cuenta.');
         }
       }
-    } catch {
+    } catch (err) {
       setResult(null);
-      setLocalBody(body);
-      downloadInstallJson(body);
+      if (err instanceof TypeError) {
+        setLocalBody(body);
+        downloadInstallJson(body);
+      } else {
+        setLocalBody(null);
+        setError(err instanceof Error ? err.message : 'No se pudo crear la instalación');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -221,6 +229,11 @@ export function ConfigurePage() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña del usuario</Label>
+                <Input id="password" name="password" type="password" autoComplete="new-password" placeholder="No uses neubat si cifras el disco" />
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="locale">Locale</Label>
@@ -286,18 +299,27 @@ export function ConfigurePage() {
                       Cifrar disco con LUKS2
                     </Label>
                     {enableEncryption && (
-                      <Select
-                        value={encryptionMethod}
-                        onValueChange={(v) => setEncryptionMethod(v as 'keyfile' | 'prompt')}
-                      >
-                        <SelectTrigger className="w-full sm:w-64" aria-label="Método de cifrado">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="keyfile">Keyfile en /boot</SelectItem>
-                          <SelectItem value="prompt">Frase interactiva al arrancar</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <>
+                        <Select
+                          value={encryptionMethod}
+                          onValueChange={(v) => setEncryptionMethod(v as 'keyfile' | 'prompt')}
+                        >
+                          <SelectTrigger className="w-full sm:w-64" aria-label="Método de cifrado">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="keyfile">Keyfile en /boot</SelectItem>
+                            <SelectItem value="prompt">Frase interactiva al arrancar</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          id="luks_passphrase"
+                          name="luks_passphrase"
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder="Passphrase LUKS (no uses neubat)"
+                        />
+                      </>
                     )}
                   </div>
                 </div>

@@ -68,6 +68,19 @@ teardown() {
     [ "$(cfg_get "${TMP_CONFIG}" missing "default")" = "default" ]
 }
 
+@test "reject_public_luks_secret bloquea neubat solo con cifrado" {
+    run reject_public_luks_secret neubat true neubat
+    [ "$status" -eq 1 ]
+    run reject_public_luks_secret otra true neubat
+    [ "$status" -eq 1 ]
+    run reject_public_luks_secret neubat false ""
+    [ "$status" -eq 0 ]
+    run reject_public_luks_secret otra true "frase-larga"
+    [ "$status" -eq 0 ]
+    NEUBAT_ALLOW_DEFAULT_SECRETS=1 run reject_public_luks_secret neubat true neubat
+    [ "$status" -eq 0 ]
+}
+
 @test "cfg_get_nested lee valores booleanos anidados" {
     [ "$(cfg_get_nested "${TMP_CONFIG}" encryption/enabled "false")" = "true" ]
     [ "$(cfg_get_nested "${TMP_CONFIG}" encryption.enabled "false")" = "true" ]

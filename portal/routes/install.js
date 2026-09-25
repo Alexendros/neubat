@@ -11,6 +11,15 @@ const db = require('../lib/db');
 const router = express.Router();
 const bootRouter = express.Router();
 
+const PUBLIC_EXAMPLE_SECRET = 'neubat';
+
+function usesPublicLuksSecret(config) {
+    if (process.env.NEUBAT_ALLOW_DEFAULT_SECRETS === '1') return false;
+    const enc = config.encryption;
+    if (!enc || enc.enabled !== true) return false;
+    return config.password === PUBLIC_EXAMPLE_SECRET || enc.passphrase === PUBLIC_EXAMPLE_SECRET;
+}
+
 // Mirror base para el netboot iPXE (configurable para mirrors/cachés locales;
 // útil cuando el firmware iPXE no tiene HTTPS compilado)
 const BOOT_BASE_URL = process.env.NEUBAT_MIRROR_BASE || 'https://geo.mirror.pkgbuild.com/iso/latest';
@@ -79,6 +88,12 @@ router.post('/install', async (req, res) => {
         }
 
         config.archinstall = toArchinstallPair(config);
+
+        if (usesPublicLuksSecret(config)) {
+            return res.status(400).json({
+                error: 'Cifrado activo con la contraseña o la passphrase de ejemplo "neubat". Elige otra. En un laboratorio exporta NEUBAT_ALLOW_DEFAULT_SECRETS=1.'
+            });
+        }
 
         // Firma HMAC de la configuración (solo si el portal tiene secreto)
         const signature = db.signConfig(config);
