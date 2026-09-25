@@ -162,7 +162,7 @@ bash scripts/validate-install.sh
 - [docs/guides/install.md](docs/guides/install.md) — documento maestro de instalación
 - [ARCHITECTURE.md](ARCHITECTURE.md) — capas y contratos
 - [docs/guides/roadmap.md](docs/guides/roadmap.md) — próximos pasos
-- [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [AGENTS.md](AGENTS.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [SUPPORT.md](SUPPORT.md) · [AGENTS.md](AGENTS.md)
 
 ## Descarga de la ISO
 

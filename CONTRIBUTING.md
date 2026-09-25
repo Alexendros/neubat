@@ -8,7 +8,7 @@
 
 Idioma: este fichero, `README.md` y `docs/guides|runbooks` en español. Identificadores de CI y nombres de jobs en inglés (`quality`, `test`, `build`, `smoke`).
 
-Lee también [AGENTS.md](AGENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) y [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+Lee también [AGENTS.md](AGENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) y [SUPPORT.md](SUPPORT.md).
 
 ## Setup
 

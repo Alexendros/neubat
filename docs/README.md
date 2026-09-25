@@ -3,7 +3,7 @@
 ### Propósito de este documento
 
 - **Objetivos:** Indexar la documentación de producto (arquitectura, guías y runbooks) y apuntar a los contratos de la raíz.
-- **Estructura:** Tabla de rutas `docs/` → enlaces a README, AGENTS, ARCHITECTURE, CONTRIBUTING y SECURITY.
+- **Estructura:** Tabla de rutas `docs/` → enlaces a README, AGENTS, ARCHITECTURE, CONTRIBUTING, SECURITY y SUPPORT.
 - **Contenido a integrar según contexto:** Adapta el índice al árbol de este repo. No copies guías de un SaaS ni de una CLI de bundles. El instalador y el portal son el producto; la ISO QEMU e2e es opt-in.
 
 | Ruta | Para qué |
@@ -20,4 +20,4 @@
 | [runbooks/ci.md](./runbooks/ci.md) | Jobs `quality` / `test` / `build` / `smoke` |
 | [RELEASE-v1.0.0.md](./RELEASE-v1.0.0.md) | Notas de la release v1.0.0 |
 
-En la raíz: [README.md](../README.md), [AGENTS.md](../AGENTS.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURITY.md](../SECURITY.md).
+En la raíz: [README.md](../README.md), [AGENTS.md](../AGENTS.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURITY.md](../SECURITY.md), [SUPPORT.md](../SUPPORT.md).

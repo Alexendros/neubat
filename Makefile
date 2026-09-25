@@ -29,7 +29,7 @@ lint:
 	@if [ -d portal/frontend/node_modules ]; then cd portal/frontend && npm run lint; else echo "oxlint omitido (sin node_modules del frontend)"; fi
 
 test:
-	cd portal && npm test
+	cd portal && npm test -- --coverage
 
 # Fachada canónica: contraste de tokens + health + POST /api/install
 smoke:

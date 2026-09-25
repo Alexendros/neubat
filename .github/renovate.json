@@ -3,7 +3,7 @@
   "extends": ["config:recommended"],
   "timezone": "Europe/Madrid",
   "labels": ["dependencies"],
-  "schedule": ["before 10am on monday"],
+  "schedule": ["before 6am"],
   "rangeStrategy": "bump",
   "dependencyDashboard": true,
   "semanticCommits": "enabled",
@@ -11,7 +11,7 @@
   "enabledManagers": ["npm", "github-actions"],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 10am on monday"]
+    "schedule": ["before 6am"]
   },
   "vulnerabilityAlerts": {
     "enabled": true,
