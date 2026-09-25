@@ -17,6 +17,7 @@
 4. [docs/architecture/](./docs/architecture/) — overview y ADRs
 5. [CONTRIBUTING.md](./CONTRIBUTING.md)
 6. [SECURITY.md](./SECURITY.md)
+7. [SUPPORT.md](./SUPPORT.md)
 
 No reinventes requisitos. Si falta ancla, paras y preguntas.
 

@@ -26,3 +26,8 @@ portal/public/favicon.svg
 .DS_Store
 out/
 portal/coverage/
+
+# Python y estado local de editores
+__pycache__/
+*.py[cod]
+.cursor/
