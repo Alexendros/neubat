@@ -110,4 +110,7 @@ export const api = {
     }),
 
   releases: () => fetchJson<ReleaseInfo>('/api/account/releases'),
+
+  profile: (name: string) =>
+    fetchJson<{ packages?: string[]; disk?: string }>(`/api/account/profiles/${encodeURIComponent(name)}`),
 };

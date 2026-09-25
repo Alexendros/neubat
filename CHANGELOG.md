@@ -7,6 +7,7 @@ Las versiones de producto (`1.0.x`) no se generan con semantic-release.
 
 ### Added
 
+- El configurador abre por tres caminos: Uso diario, Desarrollo y Servidor mínimo. Hyprland queda como ajuste.
 - Alineación P0/P1/P2 al contrato de repositorio (docs canónicos, CI `quality`/`test`/`build`/`smoke`, Renovate, Make fachada, meta-secciones).
 - `SUPPORT.md` y workflow `security` (actionlint semanal y en cambios de `.github/`).
 - Pruebas de cuenta, sesión y absorción para que el gate de cobertura del portal se ejecute de verdad.

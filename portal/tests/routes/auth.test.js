@@ -30,7 +30,8 @@ describe('auth + account + archinstall', () => {
 
     test('recomendaciones públicas', async () => {
         const res = await request(app).get('/api/account/recommendations').expect(200);
-        expect(res.body.recommendations.length).toBeGreaterThan(0);
+        expect(res.body.recommendations.map((item) => item.intent).filter(Boolean).sort())
+            .toEqual(['daily', 'develop', 'server']);
     });
 
     test('guardar config requiere sesión', async () => {

@@ -89,6 +89,9 @@ export interface Recommendation {
   profile: string;
   desktop?: string;
   packages?: string[];
+  intent?: 'daily' | 'develop' | 'server';
+  encryption?: { enabled: boolean; method?: 'keyfile' | 'passphrase' | 'interactive' };
+  snapshots?: { enabled: boolean };
 }
 
 export interface ReleaseInfo {
