@@ -16,26 +16,38 @@ const router = express.Router();
 const RECOMMENDATIONS = [
     {
         id: 'production',
-        title: 'Producción (KDE)',
-        description: 'Escritorio Plasma, servicios de servidor y cifrado recomendado.',
-        profile: 'production'
+        intent: 'daily',
+        title: 'Uso diario',
+        description: 'Escritorio KDE y disco cifrado.',
+        profile: 'production',
+        desktop: 'kde',
+        encryption: { enabled: true, method: 'keyfile' },
+        snapshots: { enabled: true }
     },
     {
         id: 'developer',
-        title: 'Desarrollo (GNOME)',
-        description: 'Toolchains, contenedores y herramientas de desarrollo.',
-        profile: 'developer'
+        intent: 'develop',
+        title: 'Desarrollo',
+        description: 'Escritorio GNOME, sin cifrar el disco.',
+        profile: 'developer',
+        desktop: 'gnome',
+        encryption: { enabled: false, method: 'keyfile' },
+        snapshots: { enabled: true }
     },
     {
         id: 'base',
-        title: 'Base mínima',
-        description: 'Sistema sin GUI, ideal para servidores o personalización total.',
-        profile: 'base'
+        intent: 'server',
+        title: 'Servidor mínimo',
+        description: 'Sin escritorio y sin cifrado.',
+        profile: 'base',
+        desktop: 'none',
+        encryption: { enabled: false, method: 'keyfile' },
+        snapshots: { enabled: false }
     },
     {
         id: 'hyprland',
-        title: 'Hyprland (recomendado equipo)',
-        description: 'Compositor Wayland tiling; parte de los perfiles curados NEUBAT.',
+        title: 'Hyprland',
+        description: 'Compositor Wayland tiling; ajuste sobre el perfil base, no un camino principal.',
         profile: 'base',
         desktop: 'hyprland',
         packages: ['hyprland', 'waybar', 'kitty', 'xdg-desktop-portal-hyprland']

@@ -37,6 +37,19 @@ describe('ConfigurePage', () => {
     expect(screen.getAllByText(/Instalar por iPXE sigue exigiendo el portal/i).length).toBeGreaterThan(0);
   });
 
+  it('Servidor mínimo anuncia que el disco no va cifrado', async () => {
+    render(<ConfigurePage />, { wrapper: Wrapper });
+    await userEvent.click(screen.getByRole('radio', { name: /Servidor mínimo/i }));
+    expect(screen.getByText(/no irá cifrado/i)).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Cifrar disco/i })).not.toBeChecked();
+  });
+
+  it('Uso diario deja el cifrado marcado', async () => {
+    render(<ConfigurePage />, { wrapper: Wrapper });
+    expect(screen.getByRole('radio', { name: /Uso diario/i })).toBeChecked();
+    expect(await screen.findByRole('checkbox', { name: /Cifrar disco/i })).toBeChecked();
+  });
+
   it('si el portal no responde, pasa a modo local', async () => {
     render(<ConfigurePage />, { wrapper: Wrapper });
     await userEvent.click(screen.getByRole('button', { name: /Generar instalación/i }));

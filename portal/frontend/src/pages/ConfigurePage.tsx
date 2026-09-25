@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { downloadInstallJson } from '@/lib/install-config';
+import { pathAnnouncement, pathsFromRecommendations, type Intent } from '@/lib/paths';
 import { useAuth } from '@/lib/auth';
 import type { InstallRequest, InstallResponse, Recommendation } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ export function ConfigurePage() {
   const [selectedPackages, setSelectedPackages] = useState<string[]>(['git', 'htop']);
   const [packageQuery, setPackageQuery] = useState('');
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [recsOffline, setRecsOffline] = useState(false);
+  const [intent, setIntent] = useState<Intent>('daily');
   const [saveName, setSaveName] = useState('');
   const [localBody, setLocalBody] = useState<InstallRequest | null>(null);
 
@@ -57,13 +58,36 @@ export function ConfigurePage() {
       .recommendations()
       .then((r) => {
         setRecommendations(r.recommendations);
-        setRecsOffline(false);
       })
       .catch(() => {
         setRecommendations([]);
-        setRecsOffline(true);
       });
   }, []);
+
+  const paths = useMemo(() => pathsFromRecommendations(recommendations), [recommendations]);
+  const activePath = paths.find((item) => item.intent === intent) ?? paths[0];
+
+  useEffect(() => {
+    setProfile(activePath.profile);
+    setDesktop(activePath.desktop);
+    setEnableEncryption(activePath.encryption.enabled);
+    setEncryptionMethod(activePath.encryption.method === 'passphrase' ? 'prompt' : 'keyfile');
+    setEnableSnapshots(activePath.snapshots.enabled);
+    let cancelled = false;
+    api
+      .profile(activePath.profile)
+      .then((profileJson) => {
+        if (!cancelled && Array.isArray(profileJson.packages)) {
+          setSelectedPackages(profileJson.packages);
+        }
+      })
+      .catch(() => {
+        /* Sin portal se conservan los paquetes ya elegidos. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activePath]);
 
   const catalog = useMemo(() => Object.values(PACKAGE_GROUPS).flat(), []);
   const filteredCatalog = catalog.filter((p) => p.includes(packageQuery.toLowerCase()));
@@ -74,9 +98,13 @@ export function ConfigurePage() {
     );
   }
 
-  function applyRecommendation(rec: Recommendation) {
-    if (rec.desktop) setDesktop(rec.desktop);
-    if (rec.packages?.length) setSelectedPackages(rec.packages);
+  function applyHyprland() {
+    const hyprland = recommendations.find((rec) => rec.id === 'hyprland');
+    setProfile('base');
+    setDesktop('hyprland');
+    setEnableEncryption(false);
+    setEnableSnapshots(false);
+    if (hyprland?.packages?.length) setSelectedPackages(hyprland.packages);
   }
 
   function buildBody(form: HTMLFormElement): InstallRequest {
@@ -152,8 +180,8 @@ export function ConfigurePage() {
   const base = window.location.origin;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-3">
-      <section className="lg:col-span-2 space-y-6" aria-labelledby="config-heading">
+    <div className="space-y-6">
+      <section className="space-y-6" aria-labelledby="config-heading">
         <div className="space-y-2">
           <h1 id="config-heading" className="text-3xl font-bold tracking-tight">
             Configurar instalación
@@ -186,6 +214,36 @@ export function ConfigurePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <fieldset className="space-y-3">
+                <legend className="text-sm font-medium">Para qué es este equipo</legend>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {paths.map((path) => (
+                    <label
+                      key={path.intent}
+                      className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md border border-border p-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+                    >
+                      <input
+                        type="radio"
+                        name="intent"
+                        value={path.intent}
+                        checked={intent === path.intent}
+                        onChange={() => setIntent(path.intent)}
+                        className="mt-1 h-4 w-4"
+                      />
+                      <span>
+                        <span className="block font-medium">{path.title}</span>
+                        <span className="block text-xs text-muted-foreground">{path.description}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p role="status" className="text-sm text-foreground">
+                  {pathAnnouncement(activePath)}
+                </p>
+                <Button type="button" variant="outline" className="min-h-11" onClick={applyHyprland}>
+                  Ajustar: Hyprland
+                </Button>
+              </fieldset>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="profile">Perfil base</Label>
@@ -408,30 +466,6 @@ export function ConfigurePage() {
         </Card>
       </section>
 
-      <aside className="space-y-6" aria-label="Recomendaciones">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recomendaciones del equipo</CardTitle>
-            <CardDescription>Perfiles curados como punto de partida.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {recsOffline && (
-              <p className="text-sm text-muted-foreground" role="status">
-                Sin portal no hay recomendaciones. El formulario y la descarga del JSON siguen disponibles.
-              </p>
-            )}
-            {recommendations.map((rec) => (
-              <div key={rec.id} className="rounded-md border border-border p-3">
-                <h3 className="font-medium">{rec.title}</h3>
-                <p className="text-xs text-muted-foreground">{rec.description}</p>
-                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => applyRecommendation(rec)}>
-                  Aplicar
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </aside>
     </div>
   );
 }
