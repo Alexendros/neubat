@@ -93,6 +93,7 @@ describe('routes/install', () => {
             .send({
                 profile: 'base',
                 hostname: 'test-encrypted',
+                password: 'clave-distinta',
                 encryption: { enabled: true, method: 'passphrase', passphrase: 'secreto' }
             })
             .expect(200);
@@ -125,6 +126,35 @@ describe('routes/install', () => {
         const res = await request(app).get(create.body.config_url).expect(200);
         expect(res.body.snapshots.enabled).toBe(true);
         expect(res.body.snapshots.cleanup.hourly).toBe(10);
+    });
+
+    test('POST /api/install rechaza cifrado con el secreto de ejemplo', async () => {
+        const res = await request(app)
+            .post('/api/install')
+            .send({ profile: 'production', hostname: 'no-publico' })
+            .expect(400);
+        expect(res.body.error).toMatch(/neubat/);
+
+        await request(app)
+            .post('/api/install')
+            .send({
+                profile: 'base',
+                password: 'clave-distinta',
+                encryption: { enabled: true, method: 'passphrase', passphrase: 'neubat' }
+            })
+            .expect(400);
+    });
+
+    test('NEUBAT_ALLOW_DEFAULT_SECRETS permite el perfil production en laboratorio', async () => {
+        process.env.NEUBAT_ALLOW_DEFAULT_SECRETS = '1';
+        try {
+            await request(app)
+                .post('/api/install')
+                .send({ profile: 'production', hostname: 'lab' })
+                .expect(200);
+        } finally {
+            delete process.env.NEUBAT_ALLOW_DEFAULT_SECRETS;
+        }
     });
 
     test('POST /api/install firma la configuración cuando hay HMAC_SECRET', async () => {

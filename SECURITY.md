@@ -28,7 +28,7 @@ Incluye: versión o commit, componente (portal / scripts / ISO), sistema operati
 - `NEUBAT_HMAC_SECRET` firma configuraciones en tránsito; debe coincidir entre portal e instalador.
 - LUKS2 con `keyfile` permite arranque desatendido: rota el keyfile tras instalar en entornos sensibles.
 - Tokens de instalación son hex de 32 caracteres (`configPathFor`); no aceptes otros formatos.
-- Contraseñas por defecto de los perfiles JSON (`neubat`) deben cambiarse en el primer acceso.
+- Contraseñas por defecto de los perfiles JSON (`neubat`) deben cambiarse en el primer acceso. Si el cifrado está activo, el portal y el instalador rechazan esa contraseña o passphrase. `NEUBAT_ALLOW_DEFAULT_SECRETS=1` es solo para un laboratorio.
 - No commitees `.env`, `portal/data/`, `ansible/generated/` ni keyfiles.
 
 ## Alcance

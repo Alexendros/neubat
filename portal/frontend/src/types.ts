@@ -21,9 +21,11 @@ export interface InstallRequest {
   locale?: string;
   keyboard?: string;
   timezone?: string;
+  password?: string;
   encryption?: {
     enabled: boolean;
     method?: 'keyfile' | 'passphrase' | 'interactive';
+    passphrase?: string;
   };
   snapshots?: {
     enabled: boolean;

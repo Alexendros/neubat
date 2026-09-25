@@ -32,7 +32,9 @@ make test-vm
 ```
 
 Variables de entorno documentadas en la cabecera del script (ISO, puertos,
-perfil, tamaño de disco).
+perfil, tamaño de disco). El perfil por defecto es `base` (sin cifrado). Un
+perfil cifrado con contraseña o passphrase `neubat` lo rechaza el portal; en
+esa VM exporta `NEUBAT_ALLOW_DEFAULT_SECRETS=1` o manda otra clave.
 
 ## Qué verifica
 

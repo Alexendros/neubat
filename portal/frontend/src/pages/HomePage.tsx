@@ -30,10 +30,12 @@ export function HomePage() {
       profile: (data.get('profile') as string) || 'production',
       hostname: (data.get('hostname') as string) || undefined,
       username: (data.get('username') as string) || undefined,
+      password: (data.get('password') as string) || undefined,
       packages: ((data.get('packages') as string) || '').split(/\s+/).filter(Boolean),
     };
     if (enableEncryption) {
-      body.encryption = { enabled: true, method: encryptionMethod };
+      const passphrase = (data.get('luks_passphrase') as string) || undefined;
+      body.encryption = { enabled: true, method: encryptionMethod, ...(passphrase ? { passphrase } : {}) };
     }
     if (enableSnapshots) {
       body.snapshots = { enabled: true };
@@ -53,10 +55,15 @@ export function HomePage() {
       const data = await api.install(body);
       setResult(data);
       setLocalBody(null);
-    } catch {
+    } catch (err) {
       setResult(null);
-      setLocalBody(body);
-      downloadInstallJson(body);
+      if (err instanceof TypeError) {
+        setLocalBody(body);
+        downloadInstallJson(body);
+      } else {
+        setLocalBody(null);
+        setError(err instanceof Error ? err.message : 'No se pudo crear la instalación');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -122,6 +129,11 @@ export function HomePage() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña del usuario</Label>
+                <Input id="password" name="password" type="password" autoComplete="new-password" placeholder="No uses neubat si cifras el disco" />
+              </div>
+
               <div className="rounded-md border border-border bg-secondary/30 p-4 space-y-4">
                 <h3 className="text-sm font-medium flex items-center gap-2">
                   <Shield className="h-4 w-4 text-cyan-400" />
@@ -141,6 +153,7 @@ export function HomePage() {
                       Cifrar disco con LUKS2
                     </Label>
                     {enableEncryption && (
+                      <>
                       <Select
                         value={encryptionMethod}
                         onValueChange={(v) => setEncryptionMethod(v as 'keyfile' | 'passphrase')}
@@ -157,6 +170,14 @@ export function HomePage() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      <Input
+                        id="luks_passphrase"
+                        name="luks_passphrase"
+                        type="password"
+                        autoComplete="new-password"
+                        placeholder="Passphrase LUKS (no uses neubat)"
+                      />
+                      </>
                     )}
                     <p className="text-xs text-muted-foreground">
                       {enableEncryption
