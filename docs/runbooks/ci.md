@@ -13,11 +13,13 @@ Van encadenados: `quality` → `test` → `build` → `smoke`. Un fallo corta lo
 | Job | Equivale a | Qué cubre |
 | --- | ---------- | --------- |
 | `quality` | `make validate` + `make lint` + Ansible syntax/lint + oxlint frontend | Estática |
-| `test` | `make test` (Jest con cobertura ≥70 %) + frontend Vitest + `make test-bash` | Unidad / integración rápida |
+| `test` | `make test` (Jest con cobertura ≥70 %) + frontend Vitest (incluye axe sobre Layout) + `make test-bash` | Unidad / integración rápida y a11y del árbol React |
 | `build` | `make build-frontend` | Artefacto desplegable (SPA Vite) |
-| `smoke` | `make smoke` + axe sintético del landing | Contraste de tokens + health + `POST /api/install` + a11y mínima |
+| `smoke` | `make smoke` | Contraste de tokens + health + `POST /api/install` |
 
 `.github/workflows/security.yml` ejecuta actionlint al cambiar `.github/**` y cada lunes a las 06:00 UTC. No es un check obligatorio de `main`: si lo fuera, los PR que no tocan workflows se quedarían esperando un job que no arranca.
+
+La cobertura del frontend se mide con `npm run test:coverage` en `portal/frontend` (línea base 43 % líneas / 39 % ramas, 25-sep-2026). No hay umbral: por debajo del 70 % de la flota no se publica como check.
 
 ## Fallos
 

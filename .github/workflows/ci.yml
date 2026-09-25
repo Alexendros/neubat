@@ -131,56 +131,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            portal/package-lock.json
-            portal/frontend/package-lock.json
+          cache-dependency-path: portal/package-lock.json
 
       - name: Install portal dependencies
         run: cd portal && npm ci
 
       - name: API smoke (health + install)
         run: make smoke
-
-      - name: Install frontend dependencies
-        run: cd portal/frontend && npm ci
-
-      - name: Install axe-core for a11y smoke
-        run: cd portal/frontend && npm install --no-save axe-core jsdom
-
-      - name: Accessibility smoke (axe on landing markup)
-        run: |
-          cd portal/frontend
-          node <<'NODE'
-          const { JSDOM } = require('jsdom');
-          const fs = require('fs');
-          const axeSource = fs.readFileSync(require.resolve('axe-core/axe.js'), 'utf8');
-          const html = `<!DOCTYPE html><html lang="es"><head><title>NEUBAT</title></head>
-          <body class="dark">
-            <a href="#contenido" class="skip-link">Saltar al contenido</a>
-            <header><nav aria-label="Principal"><a href="/">Inicio</a></nav></header>
-            <main id="contenido">
-            <article>
-            <header><h1>NEUBAT</h1></header>
-            <section><h2>Propuesta</h2><p>NEUBAT define en el navegador una instalación desatendida de Arch Linux.</p></section>
-            <section><h2>Características</h2><p>Perfil JSON, btrfs y dos entradas de arranque.</p></section>
-            <section><h2>Funcionalidades</h2><p>Asistente, ISO y arranque por URL.</p></section>
-            <section><h2>Roadmap</h2><p>El instalador iPXE real sigue necesitando el portal.</p></section>
-            <section><h2>Cierre</h2><a href="/configurar">Configurar instalación</a></section>
-            </article>
-            </main>
-            <footer>NEUBAT</footer>
-          </body></html>`;
-          const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true });
-          const { window } = dom;
-          window.eval(axeSource);
-          window.axe.run(window.document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] })
-            .then((results) => {
-              const serious = results.violations.filter(v => ['critical', 'serious'].includes(v.impact));
-              if (serious.length) {
-                console.error(JSON.stringify(serious, null, 2));
-                process.exit(1);
-              }
-              console.log('axe: sin violaciones critical/serious');
-            })
-            .catch((err) => { console.error(err); process.exit(1); });
-          NODE
