@@ -101,7 +101,7 @@ docker compose up -d
 # http://localhost:3000
 ```
 
-O en local con Node.js:
+O en local con Node.js 22 (LTS) o superior:
 
 ```bash
 cd portal/frontend && npm install && npm run build
