@@ -53,7 +53,7 @@ Una sesión = una unidad cohesiva. PR pequeño. Mensajes al humano y commits en 
 
 ## Stack y comandos
 
-- Portal: Node ≥ 18 (CI 22), Express, Jest + Supertest
+- Portal: Node ≥ 22 (LTS; CI 22), Express, Jest + Supertest
 - Frontend: React + Vite + TypeScript + shadcn/ui + Vitest + oxlint
 - Instalador: Bash + python3 (sin jq/bc) + Ansible first-boot
 - Fachada: GNU Make

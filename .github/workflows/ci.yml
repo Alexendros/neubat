@@ -146,3 +146,25 @@ jobs:
 
       - name: API smoke (health + install)
         run: make smoke
+
+  provenance:
+    name: provenance
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Download frontend artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: neubat-frontend
+          path: frontend-dist
+
+      - name: Attest frontend build
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-path: frontend-dist/**

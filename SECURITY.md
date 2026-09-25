@@ -10,8 +10,11 @@
 
 | Versión | Soportada |
 | ------- | --------- |
-| 1.0.x (`main`, ISO/portal) | Sí |
+| 2.0.x (`main`, ISO/portal) | Sí |
+| 1.0.x | No |
 | Ramas de trabajo / snapshots previos a v1.0.0 | No |
+
+El portal declara `node: ">=22"`. Node.js 18 está fuera de soporte según el calendario oficial; la CI usa Node 22 (LTS).
 
 ## Cómo reportar una vulnerabilidad
 

@@ -1,5 +1,5 @@
 # NEUBAT - Makefile
-TAG ?= 1.0.0
+TAG ?= 2.0.0
 
 .PHONY: portal install-deps install-deps-frontend build-frontend validate lint test smoke test-smoke test-vm test-bash test-ansible validate-ansible lint-ansible test-frontend build-iso release
 
