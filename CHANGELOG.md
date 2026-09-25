@@ -11,6 +11,12 @@ Las versiones de producto (`1.0.x`) no se generan con semantic-release.
 - `SUPPORT.md` y workflow `security` (actionlint semanal y en cambios de `.github/`).
 - Pruebas de cuenta, sesión y absorción para que el gate de cobertura del portal se ejecute de verdad.
 
+### Changed
+
+- axe corre sobre `Layout` (landing, configurar y cuenta) en Vitest. El job `smoke` ya no evalúa un HTML escrito a mano.
+- El panel `/api/admin` cubre 404, borrado de token no hex y fallos de lectura (100 % de ramas en ese módulo).
+- Línea base de cobertura del frontend: 43 % de líneas y 39 % de ramas (`npm run test:coverage` en `portal/frontend`). No es un gate.
+
 ### Security
 
 - El portal y el instalador rechazan un disco cifrado cuya contraseña o passphrase LUKS sea `neubat`. Laboratorio: `NEUBAT_ALLOW_DEFAULT_SECRETS=1`.
