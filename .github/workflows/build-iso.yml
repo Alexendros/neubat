@@ -11,29 +11,48 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   build-iso:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      actions: write
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Build ISO
+        env:
+          NEUBAT_REF_TYPE: ${{ github.ref_type }}
+          NEUBAT_REF_NAME: ${{ github.ref_name }}
+          NEUBAT_INPUT_TAG: ${{ inputs.tag }}
         run: |
-          TAG="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
-          # Eliminar prefijo 'v' si existe para el nombre del artefacto
+          if [ "$NEUBAT_REF_TYPE" = "tag" ]; then
+            TAG="$NEUBAT_REF_NAME"
+          else
+            TAG="$NEUBAT_INPUT_TAG"
+          fi
           TAG="${TAG#v}"
-          make build-iso TAG="${TAG}"
+          if ! printf '%s' "$TAG" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "tag no es X.Y.Z" >&2
+            exit 1
+          fi
+          make build-iso TAG="$TAG"
           cd out
           sha256sum "neubat-${TAG}-x86_64.iso" > "neubat-${TAG}-x86_64.iso.sha256"
           cat "neubat-${TAG}-x86_64.iso.sha256"
 
       - name: Upload ISO artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: neubat-iso
           path: |
@@ -43,7 +62,7 @@ jobs:
 
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
             out/*.iso

@@ -24,6 +24,7 @@ Las versiones de producto (`1.0.x`) no se generan con semantic-release.
 
 ### Changed
 
+- Los workflows fijan cada `uses` a un commit y `build-iso` declara permisos. El tag de la ISO entra por el entorno, no interpolado en el script.
 - Los jobs de CI quedan encadenados: `quality` → `test` → `build` → `smoke`.
 - `make test` recoge cobertura Jest (umbral global 70 %).
 - Renovate programa minor/patch y lockfile antes de las 06:00, `Europe/Madrid`.
